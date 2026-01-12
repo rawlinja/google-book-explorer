@@ -1,0 +1,16 @@
+import dotenv from 'dotenv';
+dotenv.config();
+
+export default {
+  GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
+  GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
+  GOOGLE_REDIRECT_URI: process.env.GOOGLE_REDIRECT_URI,
+  GOOGLE_BOOKS_API_KEY: process.env.GOOGLE_BOOKS_API_KEY,
+  GOOGLE_BOOKS_API_URL: process.env.GOOGLE_BOOKS_API_URL,
+  OPENAI_API_KEY: process.env.OPENAI_API_KEY,
+  PORT: process.env.PORT || 2000,
+  JWT_SECRET: process.env.JWT_SECRET || 'secret',
+  SHOPIFY_CLIENT_ID: process.env.SHOPIFY_CLIENT_ID,
+  SHOPIFY_CLIENT_SECRET: process.env.SHOPIFY_CLIENT_SECRET,
+  SHOPIFY_REDIRECT_URI: process.env.SHOPIFY_REDIRECT_URI,
+};
