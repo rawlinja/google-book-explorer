@@ -3,9 +3,9 @@ import { useState } from 'react';
 import Pagination from './Pagination';
 import type { BookItem, BookVolume } from '../App';
 
-import './Books.css';
+import '../styles/Books.css';
 
-import userSessionStore from '../Store';
+import userSessionStore from '../store';
 import { useQuery } from '@tanstack/react-query';
 
 async function fetchBooksV2(
@@ -13,7 +13,7 @@ async function fetchBooksV2(
   pageIndex: number = 0
 ): Promise<{ totalBooks: number; items: BookItem[] }> {
   try {
-    const url = `http://localhost:3000/api/v2/books?q=${text}&page=${pageIndex}`;
+    const url = `${import.meta.env.VITE_API_URL}/api/v2/books?q=${text}&page=${pageIndex}`;
 
     const response = await fetch(url, { credentials: 'include' });
     const data = (await response.json()) as BookVolume;

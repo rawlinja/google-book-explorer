@@ -3,7 +3,9 @@ import session from 'express-session';
 import { createClient } from 'redis';
 
 // Initialize client.
-let redisClient = createClient();
+let redisClient = createClient({
+  url: process.env.REDIS_URL,
+});
 redisClient.connect().catch(console.error);
 
 // Initialize store.
@@ -14,7 +16,7 @@ let redisStore = new RedisStore({
 
 const sessionMiddleware = session({
   store: redisStore,
-  secret: process.env.SESSION_SECRET || 'keyboard cat',
+  secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
   cookie: {

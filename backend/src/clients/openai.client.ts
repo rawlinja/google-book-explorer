@@ -1,9 +1,6 @@
 import { OpenAI } from 'openai';
-
-import dotenv from 'dotenv';
 import { ChatCompletionMessageParam, ChatCompletionMessageToolCall } from 'openai/resources';
 
-dotenv.config();
 
 const tools = [
   {

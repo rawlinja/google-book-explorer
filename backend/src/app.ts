@@ -9,10 +9,6 @@ import ragRouter from './routes/rag.js';
 import meRouter from './routes/me.js';
 import healthRouter from './routes/health.js';
 import authRouter from './routes/auth.js';
-import pool from './database/connection.js';
-
-// Extend session type to include 'user'
-//import { SessionData } from 'express-session';
 
 declare module 'express-session' {
   interface SessionData {
@@ -24,7 +20,6 @@ export const app = express();
 
 const corsOrigin = process.env.CORS_ORIGIN;
 
-// Middleware
 app.use(morgan('dev'));
 app.use(
   cors({
@@ -35,9 +30,9 @@ app.use(
 app.use(express.json());
 app.use(cookieParser());
 app.use(sessionMiddleware);
-// Centralized security middleware
+
 securityMiddleware.forEach((mw) => app.use(mw));
-// Routes
+
 app.use('/api/v2/books', bookRouter);
 app.use('/api/rag', ragRouter);
 app.use('/api/me', meRouter);

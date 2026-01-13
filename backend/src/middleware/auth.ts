@@ -1,6 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import sessionStore from '../services/sessionStore.js';
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
@@ -15,11 +14,9 @@ export function requireAuth(req: Request, res: Response, next: NextFunction) {
   }
 }
 
-export async function requireSession(req: Request, res: Response, next: NextFunction) {
-  const accessId = req.cookies.access_id;
-  if (!accessId) return res.status(401).json({ error: 'Unauthorized. Please log in.' });
-  const session = await sessionStore.get(accessId);
-  if (!session) return res.status(401).json({ error: 'Unauthorized. Please log in again.' });
-  req.session = session;
+export function requireSession(req: Request, res: Response, next: NextFunction) {
+  if (!req.session || !req.session.user) {
+    return res.status(401).json({ error: 'Unauthorized. Please log in.' });
+  }
   next();
 }

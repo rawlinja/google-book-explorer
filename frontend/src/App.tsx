@@ -1,11 +1,11 @@
-import userSessionStore from './Store';
+import userSessionStore from './store';
 import Books from './components/Books';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
-import Authorize from './Authorize';
-import AuthSignedIn from './AuthSignedIn';
+import Authorize from './pages/Authorize';
+import AuthSignedIn from './pages/AuthSignedIn';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
-import './App.css';
+import './styles/App.css';
 
 export type BookItem = {
   id: string;

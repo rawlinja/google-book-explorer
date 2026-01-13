@@ -1,8 +1,8 @@
-import './Authorize.css';
+import '../styles/Authorize.css';
 
 function Authorize() {
   function handleClick() {
-    window.location.assign(import.meta.env.VITE_LOGIN_URL);
+    window.location.assign(import.meta.env.VITE_AUTH_LOGIN_URL);
   }
 
   return (

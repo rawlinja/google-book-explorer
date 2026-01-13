@@ -38,7 +38,6 @@ await build({
     'cookie-parser',
     'cors',
     'jsonwebtoken',
-    'memcached-client',
     'nanoid',
     'openai',
     'dotenv',

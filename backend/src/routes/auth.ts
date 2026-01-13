@@ -50,7 +50,7 @@ router.get('/google/callback', async (req: Request, res: Response) => {
     expiresIn: tokens.expires_in,
   };
 
-  const token = jwt.sign(payload, 'secret', {
+  const token = jwt.sign(payload, process.env.JWT_SECRET!, {
     expiresIn: '1h',
   });
 
@@ -59,7 +59,7 @@ router.get('/google/callback', async (req: Request, res: Response) => {
     maxAge: 3600000, // 1 hour in milliseconds
   });
 
-  res.redirect('http://localhost:5173/auth-signed-in');
+  res.redirect(process.env.CORS_ORIGIN + '/auth-signed-in');
 
   console.log('Token Endpoint Response', tokens);
 

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { BookItem, BookVolume } from '../App';
 
-import './Pagination.css';
+import '../styles/Pagination.css';
 
 async function fetchBooks(
   text: string,

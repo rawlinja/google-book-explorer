@@ -1,12 +1,9 @@
 import cors from 'cors';
 
-const allowedOrigins = [
-  'http://localhost:5173',
-  // Add other allowed origins here
-];
+const corsOrigin = process.env.CORS_ORIGIN || 'http://localhost:3000';
 
 const corsOptions = {
-  origin: allowedOrigins,
+  origin: corsOrigin,
   credentials: true,
 };
 
