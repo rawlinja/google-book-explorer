@@ -1,5 +1,5 @@
 import request from 'supertest';
-import { app } from '../main.js';
+import { app } from '../app.js';
 
 describe('LLM Generate Endpoint', () => {
   it('should return a grounded answer for a valid query', async () => {

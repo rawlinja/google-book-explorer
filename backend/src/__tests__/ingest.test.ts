@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { ingestBook, makeIngestDoc, chunkText, embedTexts } from './ingest';
+import { ingestBook, makeIngestDoc, chunkText, embedTexts } from '../rag/ingest.js';
 
 // Mock OpenAI and DB
 vi.mock('openai', () => ({
@@ -13,7 +13,7 @@ vi.mock('openai', () => ({
     };
   },
 }));
-vi.mock('../database/db.js', () => ({
+vi.mock('../database/connection.js', () => ({
   default: {
     query: vi.fn(async (sql, params) => {
       if (sql.includes('BEGIN') || sql.includes('COMMIT') || sql.includes('ROLLBACK')) return {};

@@ -7,7 +7,7 @@ export async function retrieveRelevantChunks(query: string, bookId: number, k = 
   return rows.map((row: any) => ({ ...row, text: row.content }));
 }
 import OpenAI from 'openai';
-import pool from '../database/db.js';
+import pool from '../database/connection.js';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
 

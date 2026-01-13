@@ -1,12 +1,12 @@
 import express from 'express';
 import { embedQuery, searchChunks } from '../rag/query.js';
-import { getContext, setContext } from '../cache.js';
+import { getContext, setContext } from '../lib/cache.js';
 import { makeRagPrompt } from '../rag/prompt.js';
-import pool from '../database/db.js';
+import pool from '../database/connection.js';
 import OpenAI from 'openai';
 import { BookSchema } from '../validation/bookSchema.js';
 import { ingestBook } from '../rag/ingest.js';
-import { success, error } from '../utils/response.js';
+import { success, error } from '../lib/response.js';
 
 const router = express.Router();
 

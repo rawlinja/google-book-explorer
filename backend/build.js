@@ -32,7 +32,7 @@ await build({
   outdir: 'dist',
   format: 'esm',
   sourcemap: true,
-  target: ['es2020'],
+  target: ['es2022'],
   external: [
     'express',
     'cookie-parser',

@@ -1,5 +1,5 @@
 # Ignore artifacts:
-build
+dist
 coveragedist
 node_modules
 .pnp.*

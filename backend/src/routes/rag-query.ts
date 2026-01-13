@@ -1,8 +1,8 @@
 import express from 'express';
 import { embedQuery, searchChunks } from '../rag/query.js';
-import { getContext, setContext } from '../cache.js';
+import { getContext, setContext } from '../lib/cache.js';
 import { makeRagPrompt } from '../rag/prompt.js';
-import pool from '../database/db.js';
+import pool from '../database/connection.js';
 import OpenAI from 'openai';
 
 export const ragQueryRouter = express.Router();
@@ -42,8 +42,6 @@ ragQueryRouter.post('/search', async (req, res) => {
     return res.status(500).json({ ok: false, error: String(err) });
   }
 });
-
-
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
 
@@ -98,12 +96,12 @@ ragQueryRouter.post('/generate', async (req, res) => {
       temperature: 0,
     });
 
-      const answer = rsp.choices[0].message.content ?? '';
-  
-      res.json({ ok: true, source: 'llm', answer });
-    } catch (err) {
-      // Routes moved to rag.ts and consolidated.
-      console.error('❌ generate error:', err);
-      res.status(500).json({ ok: false, error: String(err) });
-    }
-  });
+    const answer = rsp.choices[0].message.content ?? '';
+
+    res.json({ ok: true, source: 'llm', answer });
+  } catch (err) {
+    // Routes moved to rag.ts and consolidated.
+    console.error('❌ generate error:', err);
+    res.status(500).json({ ok: false, error: String(err) });
+  }
+});

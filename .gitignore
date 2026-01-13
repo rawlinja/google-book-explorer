@@ -15,8 +15,8 @@ dist/
 !.yarn/patches
 !.yarn/plugins
 !.yarn/releases
-!.yarn/sdks
 !.yarn/versions
+!.yarn/sdks
 
 # IDE & tools
 .vscode/

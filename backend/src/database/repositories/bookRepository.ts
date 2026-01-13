@@ -1,4 +1,4 @@
-import { query } from '../db.js';
+import { query } from '../connection.js';
 import { Book } from '../models/book.js';
 
 export async function insertBook(book: Book) {

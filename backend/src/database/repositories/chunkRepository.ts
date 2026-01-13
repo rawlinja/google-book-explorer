@@ -1,4 +1,4 @@
-import { query } from '../db.js';
+import { query } from '../connection.js';
 import { Chunk } from '../models/chunk.js';
 
 export async function insertChunk(chunk: Chunk) {

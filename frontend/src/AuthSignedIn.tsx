@@ -11,7 +11,7 @@ export default function AuthSignedIn() {
   useEffect(() => {
     async function check() {
       const me = await getMe();
-      if (me?.isLoggedIn) {
+      if (me) {
         setIsLoggedIn(true);
         navigate('/books');
       } else {

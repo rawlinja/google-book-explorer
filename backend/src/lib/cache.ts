@@ -3,9 +3,9 @@ import { createClient } from 'redis';
 export const redis = createClient();
 
 export async function getContext(sessionId: string): Promise<string[] | null> {
-    if(redis.isOpen === false) {
-        await redis.connect();
-    }
+  if (redis.isOpen === false) {
+    await redis.connect();
+  }
 
   const key = `ctx:${sessionId}`;
   const data = await redis.lRange(key, 0, -1);
@@ -13,9 +13,9 @@ export async function getContext(sessionId: string): Promise<string[] | null> {
 }
 
 export async function setContext(sessionId: string, chunks: string[], ttl = 3600) {
-    if(!redis.isOpen) {
-        await redis.connect();
-    }
+  if (!redis.isOpen) {
+    await redis.connect();
+  }
   const key = `ctx:${sessionId}`;
   await redis.del(key); // overwrite stale context
   if (chunks.length) {

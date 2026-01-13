@@ -1,5 +1,5 @@
 import request from 'supertest';
-import { app } from '../main.js';
+import { app } from '../app.js';
 
 // Vitest supports describe/it/expect as globals
 

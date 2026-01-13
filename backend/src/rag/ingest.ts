@@ -5,8 +5,7 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 import { encoding_for_model } from 'tiktoken';
 const encoder = encoding_for_model('text-embedding-3-small'); // match embedding model
-import pool from '../database/db.js'; // your shared Pool singleton
-
+import pool from '../database/connection.js'; // your shared Pool singleton
 
 export type IngestPayload = {
   volumeId: string;
@@ -160,4 +159,3 @@ export async function embedTexts(texts: string[], batchSize = 25): Promise<numbe
   console.log(`✅ Generated ${results.length} embedding vectors`);
   return results;
 }
-

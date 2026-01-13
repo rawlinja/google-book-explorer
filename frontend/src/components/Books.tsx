@@ -13,9 +13,9 @@ async function fetchBooksV2(
   pageIndex: number = 0
 ): Promise<{ totalBooks: number; items: BookItem[] }> {
   try {
-    const url = `http://localhost:2000/api/v2/books?q=${text}&page=${pageIndex}`;
+    const url = `http://localhost:3000/api/v2/books?q=${text}&page=${pageIndex}`;
 
-    const response = await fetch(url, { mode: 'cors' });
+    const response = await fetch(url, { credentials: 'include' });
     const data = (await response.json()) as BookVolume;
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
