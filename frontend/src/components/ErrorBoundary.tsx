@@ -1,40 +1,35 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-import { Component } from 'react';
+import React, { Component, type ReactNode } from 'react';
 
-class ErrorBoundary extends Component {
-  constructor(props) {
+interface ErrorBoundaryProps {
+  children: ReactNode;
+  fallback: ReactNode;
+}
+
+interface ErrorBoundaryState {
+  hasError: boolean;
+}
+
+class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  constructor(props: ErrorBoundaryProps) {
     super(props);
     this.state = { hasError: false };
   }
 
-  static getDerivedStateFromError(error) {
-    // Update state so the next render will show the fallback UI.
+  static getDerivedStateFromError(_error: Error): ErrorBoundaryState {
     return { hasError: true };
   }
 
-  componentDidCatch(error, info) {
-    logErrorToMyService(
-      error,
-      // Example "componentStack":
-      //   in ComponentThatThrows (created by App)
-      //   in ErrorBoundary (created by App)
-      //   in div (created by App)
-      //   in App
-      info.componentStack,
-      // Warning: `captureOwnerStack` is not available in production.
-      React.captureOwnerStack()
-    );
+  componentDidCatch(error: Error, info: React.ErrorInfo) {
+    console.error('ErrorBoundary caught:', error, info.componentStack);
   }
 
   render() {
     if (this.state.hasError) {
-      // You can render any custom fallback UI
       return this.props.fallback;
     }
 
     return this.props.children;
   }
 }
-
 
 export default ErrorBoundary;

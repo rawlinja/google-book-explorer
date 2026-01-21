@@ -1,6 +1,5 @@
 import { Router, Request, Response } from 'express';
 import * as openidClient from 'openid-client';
-import { nanoid } from 'nanoid';
 
 import jwt from 'jsonwebtoken';
 

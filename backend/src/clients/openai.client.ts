@@ -1,6 +1,5 @@
-import { OpenAI } from 'openai';
 import { ChatCompletionMessageParam, ChatCompletionMessageToolCall } from 'openai/resources';
-
+import { getOpenAIClient } from '../lib/openai.js';
 
 const tools = [
   {
@@ -80,14 +79,10 @@ const tools = [
   },
 ];
 
-const client = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
 async function sendChatCompletion(
   messages: Array<ChatCompletionMessageParam>
 ): Promise<ChatCompletionMessageToolCall[] | undefined> {
-  const completion = await client.chat.completions.create({
+  const completion = await getOpenAIClient().chat.completions.create({
     model: 'gpt-3.5-turbo',
     messages,
     tools: tools as any,

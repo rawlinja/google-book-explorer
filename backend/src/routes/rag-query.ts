@@ -3,7 +3,7 @@ import { embedQuery, searchChunks } from '../rag/query.js';
 import { getContext, setContext } from '../lib/cache.js';
 import { makeRagPrompt } from '../rag/prompt.js';
 import pool from '../database/connection.js';
-import OpenAI from 'openai';
+import { getOpenAIClient } from '../lib/openai.js';
 
 export const ragQueryRouter = express.Router();
 
@@ -43,8 +43,6 @@ ragQueryRouter.post('/search', async (req, res) => {
   }
 });
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
-
 // Helper to build grounded RAG prompt from DB context
 function buildGroundedPrompt(question: string, rows: { content: string }[]): string {
   const context = rows.map((r, i) => `# Chunk ${i + 1}\n${r.content}`).join('\n\n');
@@ -72,7 +70,7 @@ ragQueryRouter.post('/generate', async (req, res) => {
 
   try {
     // 1. Embed incoming question
-    const emb = await openai.embeddings.create({
+    const emb = await getOpenAIClient().embeddings.create({
       model: 'text-embedding-3-small',
       input: q,
     });
@@ -90,7 +88,7 @@ ragQueryRouter.post('/generate', async (req, res) => {
     const groundedPrompt = buildGroundedPrompt(q, chunks);
 
     // 3. Ask GPT for synthesis/generation based on DB context
-    const rsp = await openai.chat.completions.create({
+    const rsp = await getOpenAIClient().chat.completions.create({
       model: 'gpt-4.1',
       messages: [{ role: 'user', content: groundedPrompt }],
       temperature: 0,

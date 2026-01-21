@@ -3,7 +3,7 @@ import { embedQuery, searchChunks } from '../rag/query.js';
 import { getContext, setContext } from '../lib/cache.js';
 import { makeRagPrompt } from '../rag/prompt.js';
 import pool from '../database/connection.js';
-import OpenAI from 'openai';
+import { getOpenAIClient } from '../lib/openai.js';
 import { BookSchema } from '../validation/bookSchema.js';
 import { ingestBook } from '../rag/ingest.js';
 import { success, error } from '../lib/response.js';
@@ -78,8 +78,6 @@ router.post('/search', async (req, res) => {
   }
 });
 
-// TODO: Move OpenAI client instantiation to a shared service for reuse and testability.
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
 // TODO: Parameterize prompt construction for different LLMs or use-cases.
 function buildGroundedPrompt(question: string, rows: { content: string }[]): string {
   const context = rows.map((r, i) => `# Chunk ${i + 1}\n${r.content}`).join('\n\n');

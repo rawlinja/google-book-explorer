@@ -1,7 +1,5 @@
-import { OpenAI } from 'openai';
 import { runTool } from '../clients/googlebooks.client.js';
-
-const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+import { getOpenAIClient } from '../lib/openai.js';
 
 export const tools: any[] = [
   {
@@ -60,7 +58,7 @@ export async function answerWithTools(userText: string) {
     { role: 'user', content: userText },
   ];
 
-  const resp = await client.responses.create({
+  const resp = await getOpenAIClient().responses.create({
     model: 'gpt-4.1',
     input,
     tools,

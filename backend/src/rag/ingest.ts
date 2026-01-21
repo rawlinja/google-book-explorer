@@ -1,7 +1,6 @@
 // Alias for test compatibility
 export const getEmbeddings = embedTexts;
-import OpenAI from 'openai';
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+import { getOpenAIClient } from '../lib/openai.js';
 
 import { encoding_for_model } from 'tiktoken';
 const encoder = encoding_for_model('text-embedding-3-small'); // match embedding model

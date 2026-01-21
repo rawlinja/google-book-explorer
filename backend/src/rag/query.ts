@@ -6,13 +6,11 @@ export async function retrieveRelevantChunks(query: string, bookId: number, k = 
   // Add a .text property for test compatibility
   return rows.map((row: any) => ({ ...row, text: row.content }));
 }
-import OpenAI from 'openai';
+import { getOpenAIClient } from '../lib/openai.js';
 import pool from '../database/connection.js';
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
-
 export async function embedQuery(q: string): Promise<number[]> {
-  const res = await openai.embeddings.create({
+  const res = await getOpenAIClient().embeddings.create({
     model: 'text-embedding-3-small',
     input: q,
   });
