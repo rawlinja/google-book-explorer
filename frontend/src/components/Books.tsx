@@ -1,25 +1,15 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import { useState } from 'react';
-import Pagination from './Pagination';
 import type { BookItem, BookVolume } from '../App';
-
 import '../styles/Books.css';
-
 import userSessionStore from '../store';
 import { useQuery } from '@tanstack/react-query';
 
-async function fetchBooksV2(
-  text: string,
-  pageIndex: number = 0
-): Promise<{ totalBooks: number; items: BookItem[] }> {
+async function fetchBooks(text: string): Promise<{ totalBooks: number; items: BookItem[] }> {
   try {
-    const url = `${import.meta.env.VITE_API_URL}/api/v2/books?q=${text}&page=${pageIndex}`;
-
+    const url = `${process.env.API_URL}/api/books/search?q=${encodeURIComponent(text)}`;
     const response = await fetch(url, { credentials: 'include' });
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     const data = (await response.json()) as BookVolume;
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
     return { totalBooks: data.totalItems, items: data.items || [] };
   } catch (error) {
     console.error('Error fetching books:', error);
@@ -28,28 +18,14 @@ async function fetchBooksV2(
 }
 
 function Books() {
-  const [_books, setBooks] = useState<BookItem[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchType] = useState('');
-  const [searchTypeInput] = useState('');
-  const [currentPage] = useState(1);
-
   const { isLoggedIn } = userSessionStore();
 
-
   const { data, refetch, isLoading, isError } = useQuery({
-    queryKey: ['books'],
-    queryFn: () => fetchBooksV2(encodeURIComponent(searchQuery)),
+    queryKey: ['books', searchQuery],
+    queryFn: () => fetchBooks(searchQuery),
     enabled: false,
   });
-
-  if (isLoading) {
-    return <div className="loading">Loading books...</div>;
-  }
-
-  if (isError) {
-    return <div className="error">Error fetching books. Please try again later.</div>;
-  }
 
   if (!isLoggedIn) {
     return (
@@ -60,50 +36,49 @@ function Books() {
     );
   }
 
-  return (
-    <>
-      <div className="container">
-        <div className="hero-section">
-          <h1>Google Book Search</h1>
-          <p>Search for books using the Google Books API</p>
-        </div>
-        <div className="search-container">
-          <div className="search-input-group">
-            <input
-              onChange={(e) => setSearchQuery(e.target.value)}
-              id="search"
-              type="text"
-              value={searchQuery}
-              placeholder="Search for a book..."
-            />
-            <button className="search-btn" onClick={() => refetch()}>
-              Search
-            </button>
-          </div>
-        </div>
+  if (isLoading) return <div className="loading">Loading books...</div>;
+  if (isError) return <div className="error">Error fetching books. Please try again later.</div>;
 
-        {!data?.items.length ? (
-          <div className="no-books-container">
-            <div className="no-books-message">
-              <div className="no-books-icon">📚</div>
-              <h3 className="no-books-title">No books found</h3>
-              <p className="no-books-text">Try a different search term</p>
-            </div>
+  return (
+    <div className="container">
+      <div className="hero-section">
+        <h1>Google Book Search</h1>
+        <p>Search for books using the Google Books API</p>
+      </div>
+      <div className="search-container">
+        <div className="search-input-group">
+          <input
+            onChange={(e) => setSearchQuery(e.target.value)}
+            id="search"
+            type="text"
+            value={searchQuery}
+            placeholder="Search for a book..."
+          />
+          <button className="search-btn" onClick={() => refetch()}>
+            Search
+          </button>
+        </div>
+      </div>
+
+      {!data?.items.length ? (
+        <div className="no-books-container">
+          <div className="no-books-message">
+            <div className="no-books-icon">📚</div>
+            <h3 className="no-books-title">No books found</h3>
+            <p className="no-books-text">Try a different search term</p>
           </div>
-        ) : (
+        </div>
+      ) : (
+        <>
           <div className="pagination-container">
             <div className="pagination-info">
               <p>
                 <span className="dot"></span>
-                Page <span className="highlight">{currentPage}</span> • Books{' '}
-                <span className="highlight">{data.items.length}</span> • Total{' '}
+                Books <span className="highlight">{data.items.length}</span> • Total{' '}
                 <span className="highlight">{data.totalBooks}</span>
               </p>
             </div>
           </div>
-        )}
-
-        {data?.items.length && (
           <div className="books-grid">
             {data.items.map((book: BookItem, index) => (
               <div key={index} className="book-card">
@@ -117,19 +92,9 @@ function Books() {
               </div>
             ))}
           </div>
-        )}
-
-        {data?.items.length && (
-          <Pagination
-            setBooks={setBooks}
-            bookItems={data.items}
-            searchQuery={searchQuery}
-            searchType={searchType}
-            searchTypeInput={searchTypeInput}
-          />
-        )}
-      </div>
-    </>
+        </>
+      )}
+    </div>
   );
 }
 
