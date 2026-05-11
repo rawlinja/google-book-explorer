@@ -1,13 +1,16 @@
-export default {
-  GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
-  GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
-  GOOGLE_REDIRECT_URI: process.env.GOOGLE_REDIRECT_URI,
-  GOOGLE_BOOKS_API_KEY: process.env.GOOGLE_BOOKS_API_KEY,
-  GOOGLE_BOOKS_API_URL: process.env.GOOGLE_BOOKS_API_URL,
-  OPENAI_API_KEY: process.env.OPENAI_API_KEY,
-  PORT: process.env.PORT || 2000,
-  JWT_SECRET: process.env.JWT_SECRET || 'secret',
-  SHOPIFY_CLIENT_ID: process.env.SHOPIFY_CLIENT_ID,
-  SHOPIFY_CLIENT_SECRET: process.env.SHOPIFY_CLIENT_SECRET,
-  SHOPIFY_REDIRECT_URI: process.env.SHOPIFY_REDIRECT_URI,
-};
+import { z } from 'zod';
+
+const schema = z.object({
+  NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
+  PORT: z.coerce.number().default(3001),
+  CORS_ORIGIN: z.string().default('http://localhost:3000'),
+  SESSION_SECRET: z.string().min(1),
+  JWT_SECRET: z.string().min(1),
+  REDIS_URL: z.string().default('redis://redis:6379'),
+  GOOGLE_CLIENT_ID: z.string().min(1),
+  GOOGLE_CLIENT_SECRET: z.string().min(1),
+  GOOGLE_REDIRECT_URI: z.string().min(1),
+  BACKEND_URL: z.string().default('http://backend:3002'),
+});
+
+export const config = schema.parse(process.env);
