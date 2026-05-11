@@ -1,50 +1,22 @@
-FROM node:22-alpine AS base
-WORKDIR /app
-RUN corepack enable
-ENV YARN_ENABLE_GLOBAL_CACHE=0
-ENV YARN_CACHE_FOLDER=/app/.yarn/berry/cache
+FROM node:lts-alpine AS base
+RUN npm install -g pnpm
 
 FROM base AS deps
-COPY .yarnrc.yml package.json yarn.lock ./
-RUN yarn install
+WORKDIR /app
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
 
-FROM base AS dev
-COPY .yarnrc.yml package.json yarn.lock ./
-COPY --from=deps /app/.yarn ./.yarn
-COPY --from=deps /app/.pnp* ./
-
+FROM base AS builder
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+RUN pnpm build
 
-EXPOSE 3001
-
-CMD ["yarn", "dev"]
-
-# ---- Build stage: compile TypeScript to JavaScript ----
-FROM deps AS builder
-
-# Copy source code and build scripts
-COPY . .
-
-# Optional: build-time argument to influence the build
-ARG NODE_ENV=production
-ENV NODE_ENV=${NODE_ENV}
-
-# Compile src/index.ts -> dist/index.js using your build.mjs script
-RUN yarn build
-
-# ---- Production image ----
-FROM base AS production
-
+FROM base AS runner
+WORKDIR /app
 ENV NODE_ENV=production
-
-# Copy only what's needed to run the app with Yarn PnP
-COPY .yarnrc.yml package.json yarn.lock ./
-COPY --from=deps /app/.yarn ./.yarn
-COPY --from=deps /app/.pnp* ./
-
-# Copy the compiled JS from the builder stage
+COPY --from=deps /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
-
+COPY package.json ./
 EXPOSE 3001
-
-CMD ["yarn", "start"]
+CMD ["node", "dist/index.js"]
