@@ -14,5 +14,5 @@ const ctx = await esbuild.context({
 });
 
 await ctx.watch();
-await ctx.serve({ servedir: '.', port: 3000, host: '0.0.0.0' });
+await ctx.serve({ servedir: '.', port: 3000, host: '0.0.0.0', fallback: 'index.html' });
 console.log('Dev server running at http://localhost:3000');
