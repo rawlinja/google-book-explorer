@@ -9,8 +9,8 @@ const backendProxy = createProxyMiddleware({
   target: config.BACKEND_URL,
   changeOrigin: true,
   on: {
-    proxyReq: (proxyReq) => {
-      proxyReq.path = proxyReq.path.replace(/^\/api/, '');
+    proxyReq: (proxyReq, req) => {
+      proxyReq.path = (req as any).originalUrl.replace(/^\/api/, '');
     },
   },
 });
