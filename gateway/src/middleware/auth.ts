@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken';
 import { config } from '../config/index.js';
 
 export function requireAuth(req: Request, res: Response, next: NextFunction) {
-  const token = req.cookies?.jwt_token || req.headers.authorization?.split(' ')[1];
+  const token = req.cookies?.jwt_token;
   if (!token) return res.status(401).json({ error: 'Unauthorized. Please log in.' });
   try {
     jwt.verify(token, config.JWT_SECRET);
