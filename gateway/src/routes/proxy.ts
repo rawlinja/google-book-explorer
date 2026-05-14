@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, Request } from 'express';
 import { createProxyMiddleware } from 'http-proxy-middleware';
 import { requireAuth } from '../middleware/auth.js';
 import { config } from '../config/index.js';
@@ -10,7 +10,7 @@ const backendProxy = createProxyMiddleware({
   changeOrigin: true,
   on: {
     proxyReq: (proxyReq, req) => {
-      proxyReq.path = (req as any).originalUrl.replace(/^\/api/, '');
+      proxyReq.path = (req as Request).originalUrl.replace(/^\/api/, '');
     },
   },
 });
