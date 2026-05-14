@@ -1,10 +1,7 @@
 import { RedisStore } from 'connect-redis';
 import session from 'express-session';
-import { createClient } from 'redis';
 import { config } from '../config/index.js';
-
-const redisClient = createClient({ url: config.REDIS_URL });
-redisClient.connect().catch(console.error);
+import { redisClient } from '../lib/redis.js';
 
 const redisStore = new RedisStore({
   client: redisClient,
