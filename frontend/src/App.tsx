@@ -1,9 +1,11 @@
+import { useEffect, useState } from 'react';
 import userSessionStore from './store';
 import Books from './components/Books';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import Authorize from './pages/Authorize';
 import AuthSignedIn from './pages/AuthSignedIn';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { getMe } from './lib/api';
 
 import './styles/App.css';
 
@@ -28,7 +30,17 @@ export type BookVolume = {
 const queryClient = new QueryClient();
 
 function App() {
-  const { isLoggedIn } = userSessionStore();
+  const { isLoggedIn, setIsLoggedIn } = userSessionStore();
+  const [checking, setChecking] = useState(true);
+
+  useEffect(() => {
+    getMe().then((me) => {
+      setIsLoggedIn(!!me);
+      setChecking(false);
+    });
+  }, [setIsLoggedIn]);
+
+  if (checking) return null;
 
   return (
     <QueryClientProvider client={queryClient}>
