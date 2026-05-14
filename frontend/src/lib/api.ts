@@ -7,8 +7,8 @@ export function login() {
   window.location.href = `${process.env.API_URL}/auth/google`;
 }
 
-export async function getMe(): Promise<MeResponse | null> {
-  const res = await fetch(`${process.env.API_URL}/api/me`, { credentials: 'include' });
+export async function getMe(signal?: AbortSignal): Promise<MeResponse | null> {
+  const res = await fetch(`${process.env.API_URL}/api/me`, { credentials: 'include', signal });
   if (!res.ok) return null;
   return res.json();
 }

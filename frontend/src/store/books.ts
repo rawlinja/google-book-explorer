@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import type { BookItem } from '../App';
 
 type BooksState = {
@@ -17,7 +17,10 @@ const useBooksStore = create<BooksState>()(
       lastQuery: '',
       setResults: (books, totalBooks, query) => set({ books, totalBooks, lastQuery: query }),
     }),
-    { name: 'books-cache' }
+    {
+      name: 'books-session',
+      storage: createJSONStorage(() => sessionStorage),
+    }
   )
 );
 

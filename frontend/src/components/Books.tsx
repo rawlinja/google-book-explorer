@@ -4,17 +4,18 @@ import '../styles/Books.css';
 import { useQuery } from '@tanstack/react-query';
 import useBooksStore from '../store/books';
 
+const PLACEHOLDER_COVER = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="128" height="192" viewBox="0 0 128 192"%3E%3Crect width="128" height="192" fill="%23e5e7eb"/%3E%3Ctext x="64" y="104" font-family="sans-serif" font-size="12" fill="%239ca3af" text-anchor="middle"%3ENo cover%3C/text%3E%3C/svg%3E';
+
 async function fetchBooks(text: string): Promise<{ totalBooks: number; items: BookItem[] }> {
-  try {
-    const url = `${process.env.API_URL}/api/books/search?q=${encodeURIComponent(text)}`;
-    const response = await fetch(url, { credentials: 'include' });
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-    const data = (await response.json()) as BookVolume;
-    return { totalBooks: data.totalItems, items: data.items || [] };
-  } catch (error) {
-    console.error('Error fetching books:', error);
-    return { totalBooks: 0, items: [] };
+  const url = `${process.env.API_URL}/api/books/search?q=${encodeURIComponent(text)}`;
+  const response = await fetch(url, { credentials: 'include' });
+  if (response.status === 401) {
+    window.location.href = '/authorize';
+    throw new Error('Unauthorized');
   }
+  if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+  const data = (await response.json()) as BookVolume;
+  return { totalBooks: data.totalItems, items: data.items || [] };
 }
 
 function Books() {
@@ -29,7 +30,7 @@ function Books() {
 
   useEffect(() => {
     if (data) setResults(data.items, data.totalBooks, searchQuery);
-  }, [data]);
+  }, [data, searchQuery, setResults]);
 
   return (
     <div className="container">
@@ -80,11 +81,11 @@ function Books() {
               </div>
             </div>
             <div className="books-grid">
-              {displayItems.map((book: BookItem, index) => (
-                <div key={index} className="book-card">
+              {displayItems.map((book: BookItem) => (
+                <div key={book.id} className="book-card">
                   <img
                     className="book-image"
-                    src={book.volumeInfo.imageLinks?.smallThumbnail}
+                    src={book.volumeInfo.imageLinks?.smallThumbnail ?? PLACEHOLDER_COVER}
                     alt={book.volumeInfo.title}
                   />
                   <h3 className="book-title">{book.volumeInfo.title}</h3>

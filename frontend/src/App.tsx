@@ -40,7 +40,14 @@ function App() {
     userSessionStore();
 
   useEffect(() => {
-    getMe()
+    // AuthSignedIn handles its own getMe() call after the OAuth callback
+    if (window.location.pathname === '/auth-signed-in') {
+      setChecking(false);
+      return;
+    }
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
+    getMe(controller.signal)
       .then((me) => {
         setIsLoggedIn(!!me);
         setExpiresAt(me?.expiresAt ?? null);
@@ -50,8 +57,13 @@ function App() {
         setExpiresAt(null);
       })
       .finally(() => {
+        clearTimeout(timeout);
         setChecking(false);
       });
+    return () => {
+      controller.abort();
+      clearTimeout(timeout);
+    };
   }, [setIsLoggedIn, setExpiresAt, setChecking]);
 
   useEffect(() => {
