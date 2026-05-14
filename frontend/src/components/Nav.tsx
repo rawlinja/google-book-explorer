@@ -3,12 +3,19 @@ import userSessionStore from '../store';
 import '../styles/Nav.css';
 
 export default function Nav() {
-  const { isLoggedIn } = userSessionStore();
+  const { isLoggedIn, setIsLoggedIn, setExpiresAt } = userSessionStore();
+
+  async function handleLogout() {
+    setIsLoggedIn(false);
+    setExpiresAt(null);
+    await logout();
+  }
+
   if (!isLoggedIn) return null;
   return (
     <nav className="nav">
       <span className="nav-brand">Google Book Explorer</span>
-      <button className="nav-signout" onClick={logout}>Sign out</button>
+      <button className="nav-signout" onClick={handleLogout}>Sign out</button>
     </nav>
   );
 }

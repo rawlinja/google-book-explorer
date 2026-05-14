@@ -1,8 +1,13 @@
+export type MeResponse = {
+  isLoggedIn: boolean;
+  expiresAt: number;
+};
+
 export function login() {
   window.location.href = `${process.env.API_URL}/auth/google`;
 }
 
-export async function getMe() {
+export async function getMe(): Promise<MeResponse | null> {
   const res = await fetch(`${process.env.API_URL}/api/me`, { credentials: 'include' });
   if (!res.ok) return null;
   return res.json();

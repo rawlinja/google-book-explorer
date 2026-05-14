@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import type { BookItem, BookVolume } from '../App';
 import '../styles/Books.css';
-import userSessionStore from '../store';
 import { useQuery } from '@tanstack/react-query';
 
 async function fetchBooks(text: string): Promise<{ totalBooks: number; items: BookItem[] }> {
@@ -19,22 +18,12 @@ async function fetchBooks(text: string): Promise<{ totalBooks: number; items: Bo
 
 function Books() {
   const [searchQuery, setSearchQuery] = useState('');
-  const { isLoggedIn } = userSessionStore();
 
   const { data, refetch, isLoading, isError } = useQuery({
     queryKey: ['books', searchQuery],
     queryFn: () => fetchBooks(searchQuery),
     enabled: false,
   });
-
-  if (!isLoggedIn) {
-    return (
-      <div className="not-logged-in">
-        <h2>You are not logged in</h2>
-        <p>Please authorize the application to access your Google Books data.</p>
-      </div>
-    );
-  }
 
   if (isLoading) return <div className="loading">Loading books...</div>;
   if (isError) return <div className="error">Error fetching books. Please try again later.</div>;
