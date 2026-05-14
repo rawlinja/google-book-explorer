@@ -16,7 +16,7 @@ export default function AuthSignedIn() {
         navigate('/books');
       } else {
         setIsLoggedIn(false);
-        navigate('/login');
+        navigate('/authorize');
       }
     }
     check();

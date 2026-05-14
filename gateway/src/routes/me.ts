@@ -31,8 +31,8 @@ router.get('/', (req: Request, res: Response) => {
       isLoggedIn: true,
       expiresAt: decoded.exp * 1000,
     });
-  } catch (error) {
-    return res.status(500).json({ error: 'Authentication error' });
+  } catch {
+    return res.status(401).json({ error: 'Invalid or expired token' });
   }
 });
 

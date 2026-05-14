@@ -29,8 +29,6 @@ router.get('/google', async (req: Request, res: Response) => {
 
   const url = openidClient.buildAuthorizationUrl(config, parameters);
 
-  console.log(`Authorization URL: ${url.href}`);
-
   res.redirect(url.href);
 });
 
@@ -59,9 +57,11 @@ router.get('/google/callback', async (req: Request, res: Response) => {
   });
 
   res.redirect(process.env.CORS_ORIGIN + '/auth-signed-in');
+});
 
-  console.log('Token Endpoint Response', tokens);
-
+router.post('/logout', (req: Request, res: Response) => {
+  res.clearCookie('jwt_token');
+  req.session.destroy(() => res.json({ ok: true }));
 });
 
 export default router;
