@@ -22,7 +22,7 @@ declare module 'express-session' {
 export const app = express();
 
 app.set('trust proxy', 1);
-app.use(morgan('dev'));
+app.use(morgan(config.NODE_ENV === 'production' ? 'combined' : 'dev'));
 app.use(cors({ origin: config.CORS_ORIGIN, credentials: true }));
 app.use(express.json());
 app.use(cookieParser());
