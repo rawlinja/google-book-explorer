@@ -25,9 +25,6 @@ function Books() {
     enabled: false,
   });
 
-  if (isLoading) return <div className="loading">Loading books...</div>;
-  if (isError) return <div className="error">Error fetching books. Please try again later.</div>;
-
   return (
     <div className="container">
       <div className="hero-section">
@@ -38,6 +35,7 @@ function Books() {
         <div className="search-input-group">
           <input
             onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && refetch()}
             id="search"
             type="text"
             value={searchQuery}
@@ -49,7 +47,11 @@ function Books() {
         </div>
       </div>
 
-      {!data?.items.length ? (
+      {isLoading ? (
+        <div className="loading">Loading books...</div>
+      ) : isError ? (
+        <div className="error">Error fetching books. Please try again later.</div>
+      ) : !data?.items.length ? (
         <div className="no-books-container">
           <div className="no-books-message">
             <div className="no-books-icon">📚</div>
