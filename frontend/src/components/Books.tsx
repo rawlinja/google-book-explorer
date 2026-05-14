@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { BookItem, BookVolume } from '../App';
 import '../styles/Books.css';
 import { useQuery } from '@tanstack/react-query';
+import useBooksStore from '../store/books';
 
 async function fetchBooks(text: string): Promise<{ totalBooks: number; items: BookItem[] }> {
   try {
@@ -17,13 +18,18 @@ async function fetchBooks(text: string): Promise<{ totalBooks: number; items: Bo
 }
 
 function Books() {
-  const [searchQuery, setSearchQuery] = useState('');
+  const { books, totalBooks, lastQuery, setResults } = useBooksStore();
+  const [searchQuery, setSearchQuery] = useState(lastQuery);
 
   const { data, refetch, isLoading, isError } = useQuery({
     queryKey: ['books', searchQuery],
     queryFn: () => fetchBooks(searchQuery),
     enabled: false,
   });
+
+  useEffect(() => {
+    if (data) setResults(data.items, data.totalBooks, searchQuery);
+  }, [data]);
 
   return (
     <div className="container">
@@ -51,40 +57,44 @@ function Books() {
         <div className="loading">Loading books...</div>
       ) : isError ? (
         <div className="error">Error fetching books. Please try again later.</div>
-      ) : !data?.items.length ? (
-        <div className="no-books-container">
-          <div className="no-books-message">
-            <div className="no-books-icon">📚</div>
-            <h3 className="no-books-title">No books found</h3>
-            <p className="no-books-text">Try a different search term</p>
-          </div>
-        </div>
-      ) : (
-        <>
-          <div className="pagination-container">
-            <div className="pagination-info">
-              <p>
-                <span className="dot"></span>
-                Books <span className="highlight">{data.items.length}</span> • Total{' '}
-                <span className="highlight">{data.totalBooks}</span>
-              </p>
+      ) : (() => {
+        const displayItems = data?.items ?? books;
+        const displayTotal = data?.totalBooks ?? totalBooks;
+        return !displayItems.length ? (
+          <div className="no-books-container">
+            <div className="no-books-message">
+              <div className="no-books-icon">📚</div>
+              <h3 className="no-books-title">No books found</h3>
+              <p className="no-books-text">Try a different search term</p>
             </div>
           </div>
-          <div className="books-grid">
-            {data.items.map((book: BookItem, index) => (
-              <div key={index} className="book-card">
-                <img
-                  className="book-image"
-                  src={book.volumeInfo.imageLinks?.smallThumbnail}
-                  alt={book.volumeInfo.title}
-                />
-                <h3 className="book-title">{book.volumeInfo.title}</h3>
-                <p className="book-author">{book.volumeInfo.authors?.join(', ')}</p>
+        ) : (
+          <>
+            <div className="pagination-container">
+              <div className="pagination-info">
+                <p>
+                  <span className="dot"></span>
+                  Books <span className="highlight">{displayItems.length}</span> • Total{' '}
+                  <span className="highlight">{displayTotal}</span>
+                </p>
               </div>
-            ))}
-          </div>
-        </>
-      )}
+            </div>
+            <div className="books-grid">
+              {displayItems.map((book: BookItem, index) => (
+                <div key={index} className="book-card">
+                  <img
+                    className="book-image"
+                    src={book.volumeInfo.imageLinks?.smallThumbnail}
+                    alt={book.volumeInfo.title}
+                  />
+                  <h3 className="book-title">{book.volumeInfo.title}</h3>
+                  <p className="book-author">{book.volumeInfo.authors?.join(', ')}</p>
+                </div>
+              ))}
+            </div>
+          </>
+        );
+      })()}
     </div>
   );
 }
