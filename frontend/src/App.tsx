@@ -4,6 +4,7 @@ import Books from './components/Books';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import Authorize from './pages/Authorize';
 import AuthSignedIn from './pages/AuthSignedIn';
+import Nav from './components/Nav';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { getMe } from './lib/api';
 
@@ -45,6 +46,7 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
+        <Nav />
         <Routes>
           <Route path="/" element={isLoggedIn ? <Books /> : <Authorize />} />
           <Route path="/books" element={<Books />} />
