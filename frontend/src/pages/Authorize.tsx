@@ -1,8 +1,9 @@
+import { login } from '../lib/api';
 import '../styles/Authorize.css';
 
 function Authorize() {
   function handleClick() {
-    window.location.assign(`${process.env.API_URL}/auth/google`);
+    login();
   }
 
   return (
