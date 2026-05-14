@@ -4,7 +4,7 @@ import express from 'express';
 import morgan from 'morgan';
 import { config } from './config/index.js';
 import { errorHandler } from './middleware/errorHandler.js';
-import securityMiddleware from './middleware/security.js';
+import securityMiddleware, { authLimiter } from './middleware/security.js';
 import sessionMiddleware from './middleware/session.js';
 import healthRouter from './routes/health.js';
 import authRouter from './routes/auth.js';
@@ -21,6 +21,7 @@ declare module 'express-session' {
 
 export const app = express();
 
+app.set('trust proxy', 1);
 app.use(morgan('dev'));
 app.use(cors({ origin: config.CORS_ORIGIN, credentials: true }));
 app.use(express.json());
@@ -29,7 +30,7 @@ app.use(sessionMiddleware);
 securityMiddleware.forEach((mw) => app.use(mw));
 
 app.use('/health', healthRouter);
-app.use('/auth', authRouter);
+app.use('/auth', authLimiter, authRouter);
 app.use('/api/me', meRouter);
 app.use(proxyRouter);
 app.use(errorHandler);
