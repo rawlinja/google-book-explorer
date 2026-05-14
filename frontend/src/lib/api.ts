@@ -4,9 +4,8 @@ export function login() {
 
 export async function getMe() {
   const res = await fetch(`${process.env.API_URL}/api/me`, { credentials: 'include' });
-  if (res.status === 401) return null;
-  const data = await res.json();
-  return data;
+  if (!res.ok) return null;
+  return res.json();
 }
 
 export async function logout() {
