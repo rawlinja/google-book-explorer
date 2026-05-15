@@ -27,6 +27,7 @@ dist/
 .vscode/
 .github/
 .claude/
+.superpowers/
 .npmrc
 dump.rdb
 
