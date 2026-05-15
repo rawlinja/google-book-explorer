@@ -27,6 +27,7 @@ dist/
 .vscode/
 .github/
 .claude/
+.npmrc
 dump.rdb
 
 # Scripts runtime files
