@@ -54,7 +54,7 @@ flowchart TD
 - `process.env.API_URL` injected at build time via esbuild `define`
 - State: Zustand (`isLoggedIn`, `expiresAt`) + TanStack Query for book search fetches
 - Session-expiry timer auto-calls logout when the Google token expires
-- Persists last search results and query in `localStorage` via Zustand `persist`
+- Persists last search results and query in `sessionStorage` via Zustand `persist`
 
 Routes:
 - `/` — redirects based on auth state
@@ -112,8 +112,8 @@ Key routes:
 
 ### RAG ingest
 
-1. `POST /rag/ingest` accepts a book ID.
-2. Backend fetches the book's title + description from the DB.
+1. `POST /rag/ingest` accepts `volumeId`, `title`, `description`, `authors`, and `categories` in the request body.
+2. Backend upserts the book into the `books` table (`ON CONFLICT (volume_id)`), then chunks the title + description.
 3. tiktoken chunks the text (300-token windows, 40-token overlap).
 4. Each chunk is embedded with `text-embedding-3-small` (1536 dimensions).
 5. Vectors are upserted into the `book_chunks` table (pgvector `VECTOR(1536)`, HNSW cosine index).
@@ -131,7 +131,7 @@ Key routes:
 Defined by `backend/migrations/001_schema.sql`, auto-applied by Postgres on first container start.
 
 Tables:
-- `books` — `id`, `title`, `author`, `isbn`, `description`, `created_at`
+- `books` — `id`, `volume_id`, `title`, `authors TEXT[]`, `categories TEXT[]`, `description`, `metadata JSONB`, `created_at`, `updated_at`
 - `book_chunks` — `id`, `book_id`, `chunk_index`, `content`, `embedding VECTOR(1536)`, `created_at`
 
 Index: `HNSW` on `book_chunks.embedding` with cosine distance operator class.
@@ -139,7 +139,8 @@ Index: `HNSW` on `book_chunks.embedding` with cosine distance operator class.
 ## Source References
 
 - Frontend entry: `frontend/src/main.tsx`
-- Frontend store: `frontend/src/store/index.ts`
+- Frontend session store: `frontend/src/store/index.ts`
+- Frontend books store: `frontend/src/store/books.ts`
 - Gateway config: `gateway/src/config/index.ts`
 - Gateway auth routes: `gateway/src/routes/auth.ts`
 - Gateway proxy: `gateway/src/routes/proxy.ts`

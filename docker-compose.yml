@@ -6,6 +6,8 @@ services:
     ports:
       - "3000:3000"
     env_file: .env
+    environment:
+      GATEWAY_URL: http://gateway:3001
     volumes:
       - ./frontend/src:/app/src
     depends_on:
