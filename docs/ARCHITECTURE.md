@@ -52,7 +52,7 @@ flowchart TD
 - React 19, esbuild, pnpm
 - Dev server: `esbuild` with `ctx.watch()` + `ctx.serve()` (SPA fallback on `:3000`)
 - `process.env.API_URL` injected at build time via esbuild `define`
-- State: Zustand (`isLoggedIn`, `expiresAt`) + TanStack Query for book search fetches
+- State: Zustand (`isLoggedIn`, `expiresAt`, `checking`) + TanStack Query for book search fetches
 - Session-expiry timer auto-calls logout when the Google token expires
 - Persists last search results and query in `sessionStorage` via Zustand `persist`
 
