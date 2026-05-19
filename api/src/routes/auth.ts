@@ -12,7 +12,7 @@
  * 1. GET /auth/google          — generate PKCE verifier + state, store in session, redirect to Google
  * 2. GET /auth/google/callback — exchange code for tokens, store tokens in Redis under
  *                                tokens:{session.id}, mark session.authenticated = true
- * 3. POST /auth/logout         — destroy session (clears cookie + Redis entry atomically)
+ * 3. POST /auth/logout         — delete Redis token entry, destroy session, clear session cookie
  *
  * Docs: https://developers.google.com/identity/protocols/oauth2/pkce
  * openid-client: https://github.com/panva/openid-client
@@ -90,6 +90,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
   fastify.post('/auth/logout', async (req, reply) => {
     await fastify.redis.del(`tokens:${req.session.id}`);
     await req.session.destroy();
+    reply.clearCookie('sessionId', { path: '/' });
     return reply.send({ ok: true });
   });
 }
