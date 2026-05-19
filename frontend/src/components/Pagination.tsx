@@ -1,4 +1,4 @@
-import '../styles/Books.css';
+import '../styles/Pagination.css';
 
 type Props = {
   page: number;
