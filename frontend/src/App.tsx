@@ -12,20 +12,14 @@ import './styles/App.css';
 
 export type BookItem = {
   id: string;
-  volumeInfo: {
-    title: string;
-    authors?: string[];
-    imageLinks?: {
-      thumbnail: string;
-      smallThumbnail: string;
-    };
-  };
+  title: string;
+  authors?: string[];
+  thumbnail?: string;
 };
 
 export type BookVolume = {
   totalItems: number;
   items: BookItem[];
-  kind: string;
 };
 
 const queryClient = new QueryClient();

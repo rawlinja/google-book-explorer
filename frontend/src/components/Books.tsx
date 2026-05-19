@@ -85,11 +85,11 @@ function Books() {
                 <div key={book.id} className="book-card">
                   <img
                     className="book-image"
-                    src={book.volumeInfo.imageLinks?.smallThumbnail ?? PLACEHOLDER_COVER}
-                    alt={book.volumeInfo.title}
+                    src={book.thumbnail ?? PLACEHOLDER_COVER}
+                    alt={book.title}
                   />
-                  <h3 className="book-title">{book.volumeInfo.title}</h3>
-                  <p className="book-author">{book.volumeInfo.authors?.join(', ')}</p>
+                  <h3 className="book-title">{book.title}</h3>
+                  <p className="book-author">{book.authors?.join(', ')}</p>
                 </div>
               ))}
             </div>

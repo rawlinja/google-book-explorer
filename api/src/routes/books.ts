@@ -19,18 +19,6 @@ export default async function booksRoutes(fastify: FastifyInstance) {
     const startIndex = (page - 1) * 10;
     const { items, totalItems } = await searchBooks(q, startIndex);
 
-    const volumeItems = items.map((b) => ({
-      id: b.id,
-      volumeInfo: {
-        title: b.title,
-        authors: b.authors,
-        imageLinks: {
-          thumbnail: b.thumbnail,
-          smallThumbnail: b.thumbnail,
-        },
-      },
-    }));
-
-    return reply.send({ totalItems, items: volumeItems });
+    return reply.send({ totalItems, items });
   });
 }

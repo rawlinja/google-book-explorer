@@ -1,31 +1,28 @@
 # Google Book Explorer
 
-A full-stack book search application with an AI-powered query layer. Search by title, author, or ISBN — the LLM picks the right Google Books filter. The RAG pipeline ingests and embeds book descriptions for semantic search and grounded question-answering.
+A full-stack book search application with an AI-powered query layer. Search by title, author, or ISBN — GPT-4.1 picks the right Google Books filter via tool use.
 
 ## Architecture
 
 ```
 Browser
   ├── frontend  :3000   React 19 + esbuild      (UI, OAuth redirect)
-  └── gateway   :3001   Express 5 + TypeScript  (auth, session, proxy)
-                  └──   backend   :3002   FastAPI + Python    (OpenAI, pgvector, Redis)
-                           ├── postgres  :5432   pgvector       (vector embeddings)
-                           └── redis     :6379   Redis          (session + RAG cache)
+  └── api       :3001   Fastify 5 + TypeScript  (auth, book search)
+                  └──   redis     :6379          (sessions)
 ```
 
 | Service | Tech | Responsibility |
 |---------|------|---------------|
-| `frontend` | React 19, esbuild, pnpm | Book search UI, Google OAuth login |
-| `gateway` | Express 5, TypeScript, pnpm | Auth (JWT cookies), session (Redis), API proxy |
-| `backend` | FastAPI, Python 3.13, uv | OpenAI tool use, RAG pipeline, pgvector |
+| `frontend` | React 19, esbuild, pnpm | Book search UI, Google OAuth login, pagination |
+| `api` | Fastify 5, TypeScript, pnpm | Google OAuth PKCE, session auth, OpenAI tool use, Google Books |
 
 ## How it works
 
-**Book search via LLM tool use.** When a user searches, the query goes to the Python backend where GPT-4.1's [Responses API](https://platform.openai.com/docs/guides/responses) decides which Google Books filter to apply — `intitle:`, `inauthor:`, or `isbn:` — rather than passing the raw query and hoping for the right results. This tool-routing pattern produces more accurate results with no additional user effort.
+**Book search via LLM tool use.** When a user searches, the query goes to GPT-4.1's [Responses API](https://platform.openai.com/docs/guides/responses) which decides which Google Books filter to apply — `intitle:`, `inauthor:`, or `isbn:` — rather than passing the raw query and hoping for the right results. This tool-routing pattern produces more accurate results with no additional user effort.
 
-**RAG pipeline with pgvector.** The ingest pipeline chunks book descriptions using tiktoken (300-token windows, 40-token overlap), embeds each chunk with `text-embedding-3-small`, and stores the 1536-dimensional vectors in PostgreSQL via the [pgvector](https://github.com/pgvector/pgvector) extension with an HNSW index for fast approximate nearest-neighbor search. pgvector was chosen over a dedicated vector database to keep the stack simple — Postgres is already present, and pgvector with HNSW handles the search volumes a book explorer needs without another service to operate.
+**Session-only auth.** After Google OAuth, the API stores tokens in Redis and marks the session as authenticated. There is no JWT — every request already hits Redis to load the session, so a JWT would add no benefit. One auth mechanism is simpler than two.
 
-**Session-scoped RAG caching.** The generate endpoint checks Redis for a cached context before embedding the query and hitting pgvector. The cache key is the session ID, so follow-up questions in the same session reuse the retrieved chunks without a round-trip to the database. This eliminates redundant embedding API calls and latency for conversational use.
+**Pagination.** The Google Books API supports `startIndex` for offset-based pagination. The API accepts a `page` query param, computes `startIndex = (page - 1) * 10`, and returns `totalItems` from Google so the frontend can render page controls.
 
 ## Quick start
 
@@ -42,19 +39,17 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ## Environment variables
 
-| Variable | Service | Description |
-|----------|---------|-------------|
-| `GOOGLE_CLIENT_ID` | gateway | Google OAuth client ID |
-| `GOOGLE_CLIENT_SECRET` | gateway | Google OAuth client secret |
-| `GOOGLE_REDIRECT_URI` | gateway | OAuth callback — `http://localhost:3001/auth/google/callback` |
-| `JWT_SECRET` | gateway | JWT signing secret (min 32 chars) |
-| `SESSION_SECRET` | gateway | Session encryption secret (min 32 chars) |
-| `BACKEND_URL` | gateway | Internal URL of the Python backend |
-| `OPENAI_API_KEY` | backend | OpenAI API key |
-| `GOOGLE_BOOKS_API_KEY` | backend | Google Books API key |
-| `DATABASE_URL` | backend | PostgreSQL connection string |
-| `REDIS_URL` | backend | Redis connection string |
-| `API_URL` | frontend | Gateway base URL (`http://localhost:3001`) |
+| Variable | Description |
+|----------|-------------|
+| `GOOGLE_CLIENT_ID` | Google OAuth client ID |
+| `GOOGLE_CLIENT_SECRET` | Google OAuth client secret |
+| `GOOGLE_REDIRECT_URI` | OAuth callback — `http://localhost:3001/auth/google/callback` |
+| `SESSION_SECRET` | Session encryption secret (min 32 chars) |
+| `REDIS_URL` | Redis connection string |
+| `OPENAI_API_KEY` | OpenAI API key |
+| `GOOGLE_BOOKS_API_KEY` | Google Books API key |
+| `DATABASE_URL` | Not used — reserved for future use |
+| `API_URL` | API base URL for the frontend (`http://localhost:3001`) |
 
 ## Project structure
 
@@ -62,19 +57,16 @@ Open [http://localhost:3000](http://localhost:3000).
 google-book-explorer/
 ├── frontend/            # React 19 + esbuild (pnpm)
 │   └── src/
-│       ├── components/  # Books, Pagination, ErrorBoundary
-│       ├── pages/       # Login, Authorize, AuthSignedIn
-│       └── store/       # Zustand session state
-├── gateway/             # Express 5 + TypeScript (pnpm)
+│       ├── components/  # Books, Pagination, ErrorBoundary, Nav
+│       ├── pages/       # Authorize, AuthSignedIn
+│       ├── store/       # Zustand session + books state
+│       └── lib/         # api helpers (getMe, login, logout)
+├── api/                 # Fastify 5 + TypeScript (pnpm)
 │   └── src/
-│       ├── middleware/  # auth (JWT), session (Redis), security
-│       └── routes/      # auth (OAuth), me, health, proxy
-├── backend/             # FastAPI + Python 3.13 (uv)
-│   ├── app/
-│   │   ├── routers/     # books (search), rag (ingest/search/generate)
-│   │   └── services/    # book_search (tool use), rag_service (chunk/embed/generate)
-│   ├── migrations/      # pgvector schema
-│   └── tests/
+│       ├── plugins/     # Redis client
+│       ├── hooks/       # requireAuth
+│       ├── routes/      # auth, me, health, books
+│       └── services/    # bookSearch (OpenAI), googleBooks
 ├── docker-compose.yml
 ├── .env.example
 └── scripts/
