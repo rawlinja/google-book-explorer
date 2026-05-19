@@ -1,11 +1,7 @@
 services:
   frontend:
     restart: always
-  gateway:
-    restart: always
-  backend:
-    restart: always
-  postgres:
+  api:
     restart: always
   redis:
     restart: always
