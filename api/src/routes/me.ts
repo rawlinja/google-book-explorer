@@ -5,6 +5,9 @@ export default async function meRoutes(fastify: FastifyInstance) {
     if (!req.session.authenticated) {
       return reply.status(401).send({ error: 'Unauthorized' });
     }
-    return reply.send({ isLoggedIn: true });
+    return reply.send({
+      isLoggedIn: true,
+      expiresAt: req.session.expiresAt,
+    });
   });
 }

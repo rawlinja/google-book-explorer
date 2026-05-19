@@ -26,6 +26,7 @@ declare module '@fastify/session' {
     codeVerifier?: string;
     state?: string;
     authenticated?: boolean;
+    expiresAt?: number;
   }
 }
 
@@ -80,6 +81,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
       );
 
       req.session.authenticated = true;
+      req.session.expiresAt = Date.now() + TOKEN_TTL * 1000;
 
       return reply.redirect(`${config.CORS_ORIGIN}/auth-signed-in`);
     } catch {
