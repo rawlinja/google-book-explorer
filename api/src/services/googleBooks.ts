@@ -36,7 +36,9 @@ async function search(q: string, startIndex: number): Promise<GoogleBooksResult>
       title: vi.title ?? '',
       authors: vi.authors ?? [],
       categories: vi.categories ?? [],
-      ...(vi.imageLinks?.thumbnail && { thumbnail: vi.imageLinks.thumbnail }),
+      ...((vi.imageLinks?.thumbnail ?? vi.imageLinks?.smallThumbnail) && {
+        thumbnail: (vi.imageLinks.thumbnail ?? vi.imageLinks.smallThumbnail).replace('http://', 'https://'),
+      }),
       ...(vi.publishedDate && { publishedDate: vi.publishedDate }),
       ...(vi.description && { description: vi.description }),
       ...(vi.pageCount && { pageCount: vi.pageCount }),
