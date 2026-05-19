@@ -31,8 +31,9 @@ Browser
 ```bash
 git clone https://github.com/rawlinja/google-book-explorer.git
 cd google-book-explorer
-cp .env.example .env     # fill in your API keys
-./scripts/start.sh
+cp .env.example .env          # fill in your API keys
+./scripts/build-containers.sh # build Docker images
+./scripts/start.sh            # start all services
 ```
 
 Open [http://localhost:3000](http://localhost:3000).
@@ -48,8 +49,7 @@ Open [http://localhost:3000](http://localhost:3000).
 | `REDIS_URL` | Redis connection string |
 | `OPENAI_API_KEY` | OpenAI API key |
 | `GOOGLE_BOOKS_API_KEY` | Google Books API key |
-| `DATABASE_URL` | Not used — reserved for future use |
-| `API_URL` | API base URL for the frontend (`http://localhost:3001`) |
+| `API_URL` | Frontend dev-server proxy target (`http://localhost:3001`) |
 
 ## Project structure
 
@@ -70,8 +70,11 @@ google-book-explorer/
 ├── docker-compose.yml
 ├── .env.example
 └── scripts/
-    ├── start.sh
-    └── stop.sh
+    ├── install.sh            # pnpm install (frontend + api)
+    ├── build-containers.sh   # docker compose build
+    ├── start.sh              # docker compose up -d
+    ├── stop.sh               # docker compose down
+    └── logs.sh               # docker compose logs -f [service]
 ```
 
 ## License
