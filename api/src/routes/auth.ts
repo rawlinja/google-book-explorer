@@ -72,7 +72,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
       delete req.session.state;
 
       await fastify.redis.setex(
-        `tokens:${req.session.id}`,
+        `tokens:${req.session.sessionId}`,
         TOKEN_TTL,
         JSON.stringify({
           accessToken: tokens.access_token,
@@ -92,7 +92,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
   });
 
   fastify.post('/auth/logout', async (req, reply) => {
-    await fastify.redis.del(`tokens:${req.session.id}`);
+    await fastify.redis.del(`tokens:${req.session.sessionId}`);
     await req.session.destroy();
     reply.clearCookie('sessionId', { path: '/' });
     return reply.send({ ok: true });
