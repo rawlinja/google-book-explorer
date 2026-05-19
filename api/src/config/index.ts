@@ -6,7 +6,6 @@ const schema = z.object({
   CORS_ORIGIN: z.string().default('http://localhost:3000'),
   SESSION_SECRET: z.string().min(32),
   REDIS_URL: z.string().default('redis://redis:6379'),
-  DATABASE_URL: z.string().min(1),
   GOOGLE_CLIENT_ID: z.string().min(1),
   GOOGLE_CLIENT_SECRET: z.string().min(1),
   GOOGLE_REDIRECT_URI: z.string().min(1),
@@ -18,7 +17,7 @@ const result = schema.safeParse(process.env);
 
 if (!result.success) {
   console.error('Invalid environment configuration:');
-  console.error(result.error.flatten().fieldErrors);
+  console.error(result.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`));
   process.exit(1);
 }
 
