@@ -42,7 +42,7 @@ TOOLS = [
 ]
 
 
-async def answer_with_tools(user_text: str) -> list[dict]:
+async def answer_with_tools(user_text: str, start_index: int = 0) -> tuple[list[dict], int]:
     client = AsyncOpenAI()
     response = await client.responses.create(
         model="gpt-4.1",
@@ -59,14 +59,16 @@ async def answer_with_tools(user_text: str) -> list[dict]:
     output = response.output or []
     tool_calls = [o for o in output if o.type == "function_call"]
     if not tool_calls:
-        return []
+        return [], 0
     results: list[dict] = []
+    total = 0
     for call in tool_calls:
         args = (
             json.loads(call.arguments)
             if isinstance(call.arguments, str)
             else call.arguments
         )
-        books = await run_tool(call.name, args)
+        books, total_items = await run_tool(call.name, args, start_index)
         results.extend(books)
-    return results
+        total = max(total, total_items)
+    return results, total
