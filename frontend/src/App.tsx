@@ -46,13 +46,14 @@ function App() {
         setIsLoggedIn(!!me);
         setExpiresAt(me?.expiresAt ?? null);
       })
-      .catch(() => {
+      .catch((err) => {
+        if (err?.name === 'AbortError') return;
         setIsLoggedIn(false);
         setExpiresAt(null);
       })
       .finally(() => {
         clearTimeout(timeout);
-        setChecking(false);
+        if (!controller.signal.aborted) setChecking(false);
       });
     return () => {
       controller.abort();
@@ -80,7 +81,7 @@ function App() {
             element={isLoggedIn ? <Navigate to="/books" replace /> : <Navigate to="/authorize" replace />}
           />
           <Route path="/books" element={<ProtectedRoute><Books /></ProtectedRoute>} />
-          <Route path="/authorize" element={<Authorize />} />
+          <Route path="/authorize" element={isLoggedIn ? <Navigate to="/books" replace /> : <Authorize />} />
           <Route path="/auth-signed-in" element={<AuthSignedIn />} />
         </Routes>
       </BrowserRouter>
