@@ -1,18 +1,21 @@
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import { buildApp } from '../app.js';
 
-vi.mock('../plugins/redis.js', () => ({
-  default: async (fastify: any) => {
-    const store: Record<string, string> = {};
-    fastify.decorate('redis', {
-      get: (k: string) => Promise.resolve(store[k] ?? null),
-      setex: (k: string, _ttl: number, v: string) => { store[k] = v; return Promise.resolve('OK'); },
-      del: (k: string) => { delete store[k]; return Promise.resolve(1); },
-      on: () => {},
-      quit: () => Promise.resolve(),
-    });
-  },
-}));
+vi.mock('../plugins/redis.js', async () => {
+  const { default: fp } = await import('fastify-plugin');
+  return {
+    default: fp(async (fastify: any) => {
+      const store: Record<string, string> = {};
+      fastify.decorate('redis', {
+        get: (k: string) => Promise.resolve(store[k] ?? null),
+        setex: (k: string, _ttl: number, v: string) => { store[k] = v; return Promise.resolve('OK'); },
+        del: (k: string) => { delete store[k]; return Promise.resolve(1); },
+        on: () => {},
+        quit: () => Promise.resolve(),
+      });
+    }),
+  };
+});
 
 
 vi.mock('openid-client', async () => {

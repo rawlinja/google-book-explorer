@@ -9,17 +9,20 @@ vi.mock('../services/bookSearch.js', () => ({
   searchBooks: vi.fn().mockResolvedValue({ items: [], totalItems: 0 }),
 }));
 
-vi.mock('../plugins/redis.js', () => ({
-  default: async (fastify: any) => {
-    fastify.decorate('redis', {
-      get: vi.fn().mockResolvedValue(null),
-      setex: vi.fn().mockResolvedValue('OK'),
-      del: vi.fn().mockResolvedValue(1),
-      on: () => {},
-      quit: vi.fn().mockResolvedValue(undefined),
-    });
-  },
-}));
+vi.mock('../plugins/redis.js', async () => {
+  const { default: fp } = await import('fastify-plugin');
+  return {
+    default: fp(async (fastify: any) => {
+      fastify.decorate('redis', {
+        get: vi.fn().mockResolvedValue(null),
+        setex: vi.fn().mockResolvedValue('OK'),
+        del: vi.fn().mockResolvedValue(1),
+        on: () => {},
+        quit: vi.fn().mockResolvedValue(undefined),
+      });
+    }),
+  };
+});
 
 
 vi.mock('openid-client', async () => {
@@ -51,7 +54,7 @@ describe('GET /api/books/search', () => {
     expect(res.statusCode).toBe(200);
     const body = res.json();
     expect(body.totalItems).toBe(87);
-    expect(body.items[0].volumeInfo.title).toBe('Clean Code');
+    expect(body.items[0].title).toBe('Clean Code');
   });
 
   it('passes startIndex 10 for page 2', async () => {
