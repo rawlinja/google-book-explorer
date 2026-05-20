@@ -1,0 +1,6 @@
+allowBuilds:
+  esbuild: true
+
+minimumReleaseAge: "7 days"
+trustPolicy: no-downgrade
+blockExoticSubdeps: true
