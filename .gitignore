@@ -25,7 +25,6 @@ dist/
 
 # IDE & tools
 .vscode/
-.github/
 .claude/
 .superpowers/
 .npmrc
