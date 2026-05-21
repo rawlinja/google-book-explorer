@@ -4,6 +4,8 @@ import '../styles/Books.css';
 import { useQuery } from '@tanstack/react-query';
 import useBooksStore from '../store/books';
 import Pagination from './Pagination';
+import { fetchShelves, addToShelf } from '../lib/api';
+import type { Shelf } from '../lib/api';
 
 const PLACEHOLDER_COVER = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="128" height="192" viewBox="0 0 128 192"%3E%3Crect width="128" height="192" fill="%23e5e7eb"/%3E%3Ctext x="64" y="104" font-family="sans-serif" font-size="12" fill="%239ca3af" text-anchor="middle"%3ENo cover%3C/text%3E%3C/svg%3E';
 
@@ -19,6 +21,54 @@ async function fetchBooks(text: string, page: number): Promise<{ totalBooks: num
   return { totalBooks: data.totalItems, items: data.items || [] };
 }
 
+function BookCard({ book, shelves }: { book: BookItem; shelves: Shelf[] }) {
+  const [shelfOpen, setShelfOpen] = useState(false);
+  const [adding, setAdding] = useState(false);
+  const [added, setAdded] = useState(false);
+
+  async function handleAddToShelf(shelfId: number) {
+    setAdding(true);
+    try {
+      await addToShelf(shelfId, book.id);
+      setAdded(true);
+      setShelfOpen(false);
+      setTimeout(() => setAdded(false), 1500);
+    } finally {
+      setAdding(false);
+    }
+  }
+
+  return (
+    <div className="book-card" onClick={() => { if (!shelfOpen) return; setShelfOpen(false); }}>
+      <img className="book-image" src={book.thumbnail ?? PLACEHOLDER_COVER} alt={book.title} />
+      <h3 className="book-title">{book.title}</h3>
+      <p className="book-author">{book.authors?.join(', ')}</p>
+      <div className={`shelf-bar${shelfOpen ? ' shelf-bar--open' : ''}`} onClick={(e) => e.stopPropagation()}>
+        {added ? (
+          <span className="shelf-added">Added ✓</span>
+        ) : shelfOpen ? (
+          <div className="shelf-list">
+            {shelves.map((shelf) => (
+              <button
+                key={shelf.id}
+                className="shelf-item"
+                onClick={() => handleAddToShelf(shelf.id)}
+                disabled={adding}
+              >
+                {shelf.title}
+              </button>
+            ))}
+          </div>
+        ) : (
+          <button className="shelf-bar-btn" onClick={() => setShelfOpen(true)}>
+            + Add to shelf
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function Books() {
   const { books, totalBooks, lastQuery, setResults } = useBooksStore();
   const [searchQuery, setSearchQuery] = useState(lastQuery);
@@ -29,6 +79,12 @@ function Books() {
     queryKey: ['books', submittedQuery, page],
     queryFn: () => fetchBooks(submittedQuery, page),
     enabled: submittedQuery.length > 0,
+  });
+
+  const { data: shelves = [] } = useQuery({
+    queryKey: ['bookshelves'],
+    queryFn: fetchShelves,
+    staleTime: Infinity,
   });
 
   useEffect(() => {
@@ -91,15 +147,7 @@ function Books() {
           </div>
           <div className="books-grid">
             {displayItems.map((book: BookItem) => (
-              <div key={book.id} className="book-card">
-                <img
-                  className="book-image"
-                  src={book.thumbnail ?? PLACEHOLDER_COVER}
-                  alt={book.title}
-                />
-                <h3 className="book-title">{book.title}</h3>
-                <p className="book-author">{book.authors?.join(', ')}</p>
-              </div>
+              <BookCard key={book.id} book={book} shelves={shelves} />
             ))}
           </div>
           <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
