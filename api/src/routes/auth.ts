@@ -20,6 +20,7 @@
 import { FastifyInstance } from 'fastify';
 import * as openidClient from 'openid-client';
 import { config } from '../config/index.js';
+import { oidcConfig } from '../lib/oidc.js';
 
 declare module '@fastify/session' {
   interface FastifySessionObject {
@@ -31,12 +32,6 @@ declare module '@fastify/session' {
 }
 
 const TOKEN_TTL = 3600;
-
-const oidcConfig = await openidClient.discovery(
-  new URL('https://accounts.google.com'),
-  config.GOOGLE_CLIENT_ID,
-  config.GOOGLE_CLIENT_SECRET
-);
 
 export default async function authRoutes(fastify: FastifyInstance) {
   fastify.get('/auth/google', async (req, reply) => {
