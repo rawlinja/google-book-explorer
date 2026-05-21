@@ -1,0 +1,89 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+vi.mock('openid-client', async () => {
+  const actual = await vi.importActual<typeof import('openid-client')>('openid-client');
+  return {
+    ...actual,
+    discovery: vi.fn().mockResolvedValue({}),
+    refreshTokenGrant: vi.fn(),
+  };
+});
+
+const STORED_TOKENS = {
+  accessToken: 'access-token-old',
+  refreshToken: 'refresh-token',
+  idToken: 'id-token',
+};
+
+const REFRESHED_TOKENS = {
+  access_token: 'access-token-new',
+  refresh_token: 'refresh-token-new',
+  id_token: 'id-token-new',
+};
+
+const MOCK_SHELVES_RESPONSE = {
+  items: [
+    { id: 2, title: 'To Read', volumeCount: 3 },
+    { id: 4, title: 'Have Read', volumeCount: 7 },
+  ],
+};
+
+function makeRedisMock(tokenJson = JSON.stringify(STORED_TOKENS)) {
+  return {
+    get: vi.fn().mockResolvedValue(tokenJson),
+    setex: vi.fn().mockResolvedValue('OK'),
+  };
+}
+
+beforeEach(() => {
+  vi.stubGlobal('fetch', vi.fn());
+});
+
+describe('getBookshelves - token refresh', () => {
+  it('refreshes token on 401 and retries the request', async () => {
+    const redis = makeRedisMock();
+    const { refreshTokenGrant } = await import('openid-client');
+    vi.mocked(refreshTokenGrant).mockResolvedValueOnce(REFRESHED_TOKENS as any);
+
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(new Response(null, { status: 401 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify(MOCK_SHELVES_RESPONSE), { status: 200 }));
+
+    const { getBookshelves } = await import('../services/bookshelf.js');
+    const shelves = await getBookshelves('session-id', redis as any);
+
+    expect(refreshTokenGrant).toHaveBeenCalledOnce();
+    expect(redis.setex).toHaveBeenCalledWith(
+      'tokens:session-id',
+      3600,
+      JSON.stringify({
+        accessToken: 'access-token-new',
+        refreshToken: 'refresh-token-new',
+        idToken: 'id-token-new',
+      })
+    );
+    expect(fetch).toHaveBeenCalledTimes(2);
+    expect(shelves).toHaveLength(2);
+    expect(shelves[0].title).toBe('To Read');
+  });
+
+  it('retains the original refresh token if the server does not rotate it', async () => {
+    const redis = makeRedisMock();
+    const { refreshTokenGrant } = await import('openid-client');
+    vi.mocked(refreshTokenGrant).mockResolvedValueOnce({
+      access_token: 'access-token-new',
+      refresh_token: undefined,
+      id_token: 'id-token-new',
+    } as any);
+
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(new Response(null, { status: 401 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify(MOCK_SHELVES_RESPONSE), { status: 200 }));
+
+    const { getBookshelves } = await import('../services/bookshelf.js');
+    await getBookshelves('session-id', redis as any);
+
+    const saved = JSON.parse(vi.mocked(redis.setex).mock.calls[0][2]);
+    expect(saved.refreshToken).toBe('refresh-token');
+  });
+});
