@@ -11,6 +11,7 @@ import authRoutes from './routes/auth.js';
 import healthRoutes from './routes/health.js';
 import meRoutes from './routes/me.js';
 import booksRoutes from './routes/books.js';
+import bookshelvesRoutes from './routes/bookshelves.js';
 
 class RedisSessionStore {
   constructor(private redis: Redis) {}
@@ -63,6 +64,7 @@ export async function buildApp() {
   await fastify.register(authRoutes);
   await fastify.register(meRoutes);
   await fastify.register(booksRoutes);
+  await fastify.register(bookshelvesRoutes);
 
   return fastify;
 }
