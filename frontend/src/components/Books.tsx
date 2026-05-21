@@ -9,6 +9,14 @@ import type { Shelf } from '../lib/api';
 
 const PLACEHOLDER_COVER = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="128" height="192" viewBox="0 0 128 192"%3E%3Crect width="128" height="192" fill="%23e5e7eb"/%3E%3Ctext x="64" y="104" font-family="sans-serif" font-size="12" fill="%239ca3af" text-anchor="middle"%3ENo cover%3C/text%3E%3C/svg%3E';
 
+const DEFAULT_SHELVES: Shelf[] = [
+  { id: 0, title: 'Favorites', volumeCount: 0 },
+  { id: 2, title: 'To Read', volumeCount: 0 },
+  { id: 3, title: 'Reading Now', volumeCount: 0 },
+  { id: 4, title: 'Have Read', volumeCount: 0 },
+  { id: 7, title: 'My eBooks', volumeCount: 0 },
+];
+
 async function fetchBooks(text: string, page: number): Promise<{ totalBooks: number; items: BookItem[] }> {
   const url = `${process.env.API_URL}/api/books/search?q=${encodeURIComponent(text)}&page=${page}`;
   const response = await fetch(url, { credentials: 'include' });
@@ -43,28 +51,30 @@ function BookCard({ book, shelves }: { book: BookItem; shelves: Shelf[] }) {
       <img className="book-image" src={book.thumbnail ?? PLACEHOLDER_COVER} alt={book.title} />
       <h3 className="book-title">{book.title}</h3>
       <p className="book-author">{book.authors?.join(', ')}</p>
-      <div className={`shelf-bar${shelfOpen ? ' shelf-bar--open' : ''}`} onClick={(e) => e.stopPropagation()}>
-        {added ? (
-          <span className="shelf-added">Added ✓</span>
-        ) : shelfOpen ? (
-          <div className="shelf-list">
-            {shelves.map((shelf) => (
-              <button
-                key={shelf.id}
-                className="shelf-item"
-                onClick={() => handleAddToShelf(shelf.id)}
-                disabled={adding}
-              >
-                {shelf.title}
-              </button>
-            ))}
-          </div>
-        ) : (
-          <button className="shelf-bar-btn" onClick={() => setShelfOpen(true)}>
-            + Add to shelf
-          </button>
-        )}
-      </div>
+      {shelves.length > 0 && (
+        <div className={`shelf-bar${shelfOpen ? ' shelf-bar--open' : ''}`} onClick={(e) => e.stopPropagation()}>
+          {added ? (
+            <span className="shelf-added">Added ✓</span>
+          ) : shelfOpen ? (
+            <div className="shelf-list">
+              {shelves.map((shelf) => (
+                <button
+                  key={shelf.id}
+                  className="shelf-item"
+                  onClick={() => handleAddToShelf(shelf.id)}
+                  disabled={adding}
+                >
+                  {shelf.title}
+                </button>
+              ))}
+            </div>
+          ) : (
+            <button className="shelf-bar-btn" onClick={() => setShelfOpen(true)}>
+              + Add to collection
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -81,11 +91,12 @@ function Books() {
     enabled: submittedQuery.length > 0,
   });
 
-  const { data: shelves = [] } = useQuery({
+  const { data: fetchedShelves } = useQuery({
     queryKey: ['bookshelves'],
     queryFn: fetchShelves,
     staleTime: Infinity,
   });
+  const shelves = fetchedShelves?.length ? fetchedShelves : DEFAULT_SHELVES;
 
   useEffect(() => {
     if (data) setResults(data.items, data.totalBooks, submittedQuery);
