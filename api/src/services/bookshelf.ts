@@ -6,6 +6,9 @@ const TOKEN_TTL = 3600;
 
 const BOOKSHELVES_URL = 'https://www.googleapis.com/books/v1/mylibrary/bookshelves';
 
+// Shelves Google auto-populates — users cannot manually add volumes to these
+const READ_ONLY_SHELF_IDS = new Set([1, 5, 6, 8]);
+
 export interface Shelf {
   id: number;
   title: string;
@@ -66,11 +69,13 @@ export async function getBookshelves(sessionId: string, redis: Redis): Promise<S
   if (!res.ok) throw new Error(`Google Bookshelf API error: ${res.status}`);
 
   const data = (await res.json()) as { items?: any[] };
-  return (data.items ?? []).map((item: any) => ({
-    id: item.id as number,
-    title: item.title as string,
-    volumeCount: (item.volumeCount as number) ?? 0,
-  }));
+  return (data.items ?? [])
+    .filter((item: any) => !READ_ONLY_SHELF_IDS.has(item.id as number))
+    .map((item: any) => ({
+      id: item.id as number,
+      title: item.title as string,
+      volumeCount: (item.volumeCount as number) ?? 0,
+    }));
 }
 
 export async function addToShelf(
