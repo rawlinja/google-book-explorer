@@ -31,18 +31,19 @@ async function fetchBooks(text: string, page: number): Promise<{ totalBooks: num
 
 function BookCard({ book, shelves }: { book: BookItem; shelves: Shelf[] }) {
   const [shelfOpen, setShelfOpen] = useState(false);
-  const [adding, setAdding] = useState(false);
-  const [added, setAdded] = useState(false);
+  const [addedIds, setAddedIds] = useState<Set<number>>(new Set());
+  const [failedIds, setFailedIds] = useState<Set<number>>(new Set());
 
   async function handleAddToShelf(shelfId: number) {
-    setAdding(true);
+    if (addedIds.has(shelfId)) return;
+    setAddedIds(prev => new Set(prev).add(shelfId));
+    setTimeout(() => setShelfOpen(false), 600);
     try {
       await addToShelf(shelfId, book.id);
-      setAdded(true);
-      setShelfOpen(false);
-      setTimeout(() => setAdded(false), 1500);
-    } finally {
-      setAdding(false);
+    } catch {
+      setAddedIds(prev => { const next = new Set(prev); next.delete(shelfId); return next; });
+      setFailedIds(prev => new Set(prev).add(shelfId));
+      setTimeout(() => setFailedIds(prev => { const next = new Set(prev); next.delete(shelfId); return next; }), 2000);
     }
   }
 
@@ -53,24 +54,25 @@ function BookCard({ book, shelves }: { book: BookItem; shelves: Shelf[] }) {
       <p className="book-author">{book.authors?.join(', ')}</p>
       {shelves.length > 0 && (
         <div className={`shelf-bar${shelfOpen ? ' shelf-bar--open' : ''}`} onClick={(e) => e.stopPropagation()}>
-          {added ? (
-            <span className="shelf-added">Added ✓</span>
-          ) : shelfOpen ? (
+          {shelfOpen ? (
             <div className="shelf-list">
               {shelves.map((shelf) => (
                 <button
                   key={shelf.id}
-                  className="shelf-item"
+                  className={`shelf-item${addedIds.has(shelf.id) ? ' shelf-item--added' : failedIds.has(shelf.id) ? ' shelf-item--failed' : ''}`}
                   onClick={() => handleAddToShelf(shelf.id)}
-                  disabled={adding}
+                  disabled={addedIds.has(shelf.id)}
                 >
                   {shelf.title}
                 </button>
               ))}
             </div>
           ) : (
-            <button className="shelf-bar-btn" onClick={() => setShelfOpen(true)}>
-              + Add to collection
+            <button
+              className={`shelf-bar-btn${addedIds.size > 0 ? ' shelf-bar-btn--added' : ''}`}
+              onClick={() => setShelfOpen(true)}
+            >
+              {addedIds.size > 0 ? '✓ Added to collection' : '+ Add to collection'}
             </button>
           )}
         </div>
