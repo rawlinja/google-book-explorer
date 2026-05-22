@@ -90,3 +90,16 @@ export async function addToShelf(
   const res = await authorizedFetch(url.toString(), { method: 'POST' }, sessionId, redis);
   if (!res.ok) throw new Error(`Google Bookshelf API error: ${res.status}`);
 }
+
+export async function removeFromShelf(
+  sessionId: string,
+  shelfId: number,
+  volumeId: string,
+  redis: Redis
+): Promise<void> {
+  const url = new URL(`${BOOKSHELVES_URL}/${shelfId}/removeVolume`);
+  url.searchParams.set('volumeId', volumeId);
+
+  const res = await authorizedFetch(url.toString(), { method: 'POST' }, sessionId, redis);
+  if (!res.ok) throw new Error(`Google Bookshelf API error: ${res.status}`);
+}

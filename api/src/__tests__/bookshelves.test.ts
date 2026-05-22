@@ -8,6 +8,7 @@ vi.mock('../hooks/requireAuth.js', () => ({
 vi.mock('../services/bookshelf.js', () => ({
   getBookshelves: vi.fn(),
   addToShelf: vi.fn(),
+  removeFromShelf: vi.fn(),
 }));
 
 vi.mock('../plugins/redis.js', async () => {
@@ -99,6 +100,53 @@ describe('POST /api/bookshelves/:shelfId/add', () => {
     const res = await app.inject({
       method: 'POST',
       url: '/api/bookshelves/2/add?volumeId=abc123',
+    });
+    expect(res.statusCode).toBe(502);
+  });
+});
+
+describe('POST /api/bookshelves/:shelfId/remove', () => {
+  it('returns { ok: true } on success', async () => {
+    const { removeFromShelf } = await import('../services/bookshelf.js');
+    vi.mocked(removeFromShelf).mockResolvedValueOnce(undefined);
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/bookshelves/2/remove?volumeId=abc123',
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).toEqual({ ok: true });
+  });
+
+  it('calls removeFromShelf with the correct shelfId and volumeId', async () => {
+    const { removeFromShelf } = await import('../services/bookshelf.js');
+    const mock = vi.mocked(removeFromShelf);
+    mock.mockResolvedValueOnce(undefined);
+
+    await app.inject({ method: 'POST', url: '/api/bookshelves/4/remove?volumeId=xyz789' });
+    expect(mock).toHaveBeenCalledWith(expect.any(String), 4, 'xyz789', expect.anything());
+  });
+
+  it('returns 400 when volumeId is missing', async () => {
+    const res = await app.inject({ method: 'POST', url: '/api/bookshelves/2/remove' });
+    expect(res.statusCode).toBe(400);
+  });
+
+  it('returns 400 when shelfId is not a number', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/bookshelves/notanumber/remove?volumeId=abc',
+    });
+    expect(res.statusCode).toBe(400);
+  });
+
+  it('returns 502 when the bookshelf service throws', async () => {
+    const { removeFromShelf } = await import('../services/bookshelf.js');
+    vi.mocked(removeFromShelf).mockRejectedValueOnce(new Error('Google API error: 503'));
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/bookshelves/2/remove?volumeId=abc123',
     });
     expect(res.statusCode).toBe(502);
   });

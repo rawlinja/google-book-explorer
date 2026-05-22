@@ -87,3 +87,28 @@ describe('getBookshelves - token refresh', () => {
     expect(saved.refreshToken).toBe('refresh-token');
   });
 });
+
+describe('removeFromShelf', () => {
+  it('calls the removeVolume endpoint with the correct URL', async () => {
+    const redis = makeRedisMock();
+    vi.mocked(fetch).mockResolvedValueOnce(new Response(null, { status: 200 }));
+
+    const { removeFromShelf } = await import('../services/bookshelf.js');
+    await removeFromShelf('session-id', 2, 'vol123', redis as any);
+
+    expect(fetch).toHaveBeenCalledWith(
+      'https://www.googleapis.com/books/v1/mylibrary/bookshelves/2/removeVolume?volumeId=vol123',
+      expect.objectContaining({ method: 'POST' })
+    );
+  });
+
+  it('throws when the Google API returns an error', async () => {
+    const redis = makeRedisMock();
+    vi.mocked(fetch).mockResolvedValueOnce(new Response(null, { status: 400 }));
+
+    const { removeFromShelf } = await import('../services/bookshelf.js');
+    await expect(removeFromShelf('session-id', 2, 'vol123', redis as any)).rejects.toThrow(
+      'Google Bookshelf API error: 400'
+    );
+  });
+});
