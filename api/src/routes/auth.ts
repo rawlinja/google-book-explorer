@@ -55,8 +55,8 @@ export default async function authRoutes(fastify: FastifyInstance) {
 
   fastify.get('/auth/google/callback', async (req, reply) => {
     try {
-      const host = req.headers.host ?? `localhost:${config.PORT}`;
-      const currentUrl = new URL(`${req.protocol}://${host}${req.url}`);
+      const qs = req.url.slice(req.url.indexOf('?'));
+      const currentUrl = new URL(`${config.GOOGLE_REDIRECT_URI}${qs}`);
 
       const tokens = await openidClient.authorizationCodeGrant(oidcConfig, currentUrl, {
         pkceCodeVerifier: req.session.codeVerifier,
@@ -79,10 +79,10 @@ export default async function authRoutes(fastify: FastifyInstance) {
       req.session.authenticated = true;
       req.session.expiresAt = Date.now() + TOKEN_TTL * 1000;
 
-      return reply.redirect(`${config.CORS_ORIGIN}/auth-signed-in`);
+      return reply.redirect('/auth-signed-in');
     } catch (err) {
       req.log.error({ err }, 'OAuth callback failed');
-      return reply.redirect(`${config.CORS_ORIGIN}/authorize`);
+      return reply.redirect('/authorize');
     }
   });
 
