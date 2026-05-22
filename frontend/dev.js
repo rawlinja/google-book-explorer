@@ -41,7 +41,7 @@ function forward(req, res, targetBase) {
 
 http
   .createServer((req, res) => {
-    const toGateway = req.url.startsWith('/api') || req.url.startsWith('/auth');
+    const toGateway = req.url.startsWith('/api') || req.url.startsWith('/auth/google') || req.url.startsWith('/auth/logout');
     forward(req, res, toGateway ? GATEWAY : `http://127.0.0.1:${ESBUILD_PORT}`);
   })
   .listen(3000, '0.0.0.0', () => {
