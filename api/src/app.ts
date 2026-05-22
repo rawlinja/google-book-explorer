@@ -4,40 +4,14 @@ import cookie from '@fastify/cookie';
 import session from '@fastify/session';
 import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
-import type { Redis } from 'ioredis';
 import redisPlugin from './plugins/redis.js';
+import { RedisSessionStore } from './store/redisSessionStore.js';
 import { config } from './config/index.js';
 import authRoutes from './routes/auth.js';
 import healthRoutes from './routes/health.js';
 import meRoutes from './routes/me.js';
 import booksRoutes from './routes/books.js';
 import bookshelvesRoutes from './routes/bookshelves.js';
-
-class RedisSessionStore {
-  constructor(private redis: Redis) {}
-
-  get(sid: string, cb: (err: any, session?: any) => void) {
-    this.redis
-      .get(`sess:${sid}`)
-      .then((data) => cb(null, data ? JSON.parse(data) : null))
-      .catch(cb);
-  }
-
-  set(sid: string, session: any, cb: (err?: any) => void) {
-    const ttl = session?.cookie?.maxAge ? Math.floor(session.cookie.maxAge / 1000) : 3600;
-    this.redis
-      .setex(`sess:${sid}`, ttl, JSON.stringify(session))
-      .then(() => cb())
-      .catch(cb);
-  }
-
-  destroy(sid: string, cb: (err?: any) => void) {
-    this.redis
-      .del(`sess:${sid}`)
-      .then(() => cb())
-      .catch(cb);
-  }
-}
 
 export async function buildApp() {
   const fastify = Fastify({
