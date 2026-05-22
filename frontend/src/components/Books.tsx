@@ -15,7 +15,6 @@ const DEFAULT_SHELVES: Shelf[] = [
   { id: 2, title: 'To Read', volumeCount: 0 },
   { id: 3, title: 'Reading Now', volumeCount: 0 },
   { id: 4, title: 'Have Read', volumeCount: 0 },
-  { id: 7, title: 'My eBooks', volumeCount: 0 },
 ];
 
 async function fetchBooks(text: string, page: number): Promise<{ totalBooks: number; items: BookItem[] }> {
