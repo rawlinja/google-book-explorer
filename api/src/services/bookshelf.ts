@@ -7,7 +7,7 @@ const TOKEN_TTL = 3600;
 const BOOKSHELVES_URL = 'https://www.googleapis.com/books/v1/mylibrary/bookshelves';
 
 // Shelves Google auto-populates — users cannot manually add volumes to these
-const READ_ONLY_SHELF_IDS = new Set([1, 5, 6, 8]);
+const READ_ONLY_SHELF_IDS = new Set([1, 5, 6, 7, 8, 9]);
 
 export interface Shelf {
   id: number;
