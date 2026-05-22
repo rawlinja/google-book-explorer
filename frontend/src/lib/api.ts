@@ -47,3 +47,13 @@ export async function addToShelf(shelfId: number, volumeId: string): Promise<voi
   }
   if (!res.ok) throw new Error(`Failed to add to shelf: ${res.status}`);
 }
+
+export async function removeFromShelf(shelfId: number, volumeId: string): Promise<void> {
+  const url = `${process.env.API_URL}/api/bookshelves/${shelfId}/remove?volumeId=${encodeURIComponent(volumeId)}`;
+  const res = await fetch(url, { method: 'POST', credentials: 'include' });
+  if (res.status === 401) {
+    window.location.href = '/authorize';
+    throw new Error('Unauthorized');
+  }
+  if (!res.ok) throw new Error(`Failed to remove from shelf: ${res.status}`);
+}

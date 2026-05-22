@@ -222,11 +222,10 @@
   cursor: not-allowed;
 }
 
-.shelf-item--added {
+.shelf-item--current {
   color: #059669;
   border-color: #a7f3d0;
   background: #f0fdf4;
-  cursor: default;
 }
 
 .shelf-item--failed {

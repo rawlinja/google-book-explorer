@@ -4,7 +4,8 @@ import '../styles/Books.css';
 import { useQuery } from '@tanstack/react-query';
 import useBooksStore from '../store/books';
 import Pagination from './Pagination';
-import { fetchShelves, addToShelf } from '../lib/api';
+import useCollectionsStore from '../store/collections';
+import { fetchShelves, addToShelf, removeFromShelf } from '../lib/api';
 import type { Shelf } from '../lib/api';
 
 const PLACEHOLDER_COVER = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="128" height="192" viewBox="0 0 128 192"%3E%3Crect width="128" height="192" fill="%23e5e7eb"/%3E%3Ctext x="64" y="104" font-family="sans-serif" font-size="12" fill="%239ca3af" text-anchor="middle"%3ENo cover%3C/text%3E%3C/svg%3E';
@@ -31,19 +32,41 @@ async function fetchBooks(text: string, page: number): Promise<{ totalBooks: num
 
 function BookCard({ book, shelves }: { book: BookItem; shelves: Shelf[] }) {
   const [shelfOpen, setShelfOpen] = useState(false);
-  const [addedIds, setAddedIds] = useState<Set<number>>(new Set());
   const [failedIds, setFailedIds] = useState<Set<number>>(new Set());
+  const { bookCollections, setCollection, removeCollection } = useCollectionsStore();
+  const currentShelfId = bookCollections[book.id];
+  const currentShelf = shelves.find((s) => s.id === currentShelfId);
 
   async function handleAddToShelf(shelfId: number) {
-    if (addedIds.has(shelfId)) return;
-    setAddedIds(prev => new Set(prev).add(shelfId));
-    setTimeout(() => setShelfOpen(false), 600);
+    const prevShelfId = bookCollections[book.id];
+
+    if (shelfId === prevShelfId) {
+      removeCollection(book.id);
+    } else {
+      setCollection(book.id, shelfId);
+    }
+    setTimeout(() => setShelfOpen(false), 300);
+
     try {
-      await addToShelf(shelfId, book.id);
+      if (shelfId === prevShelfId) {
+        await removeFromShelf(shelfId, book.id);
+      } else if (prevShelfId !== undefined) {
+        await removeFromShelf(prevShelfId, book.id);
+        await addToShelf(shelfId, book.id);
+      } else {
+        await addToShelf(shelfId, book.id);
+      }
     } catch {
-      setAddedIds(prev => { const next = new Set(prev); next.delete(shelfId); return next; });
-      setFailedIds(prev => new Set(prev).add(shelfId));
-      setTimeout(() => setFailedIds(prev => { const next = new Set(prev); next.delete(shelfId); return next; }), 2000);
+      if (prevShelfId !== undefined) {
+        setCollection(book.id, prevShelfId);
+      } else {
+        removeCollection(book.id);
+      }
+      setFailedIds((prev) => new Set(prev).add(shelfId));
+      setTimeout(
+        () => setFailedIds((prev) => { const next = new Set(prev); next.delete(shelfId); return next; }),
+        2000
+      );
     }
   }
 
@@ -59,20 +82,19 @@ function BookCard({ book, shelves }: { book: BookItem; shelves: Shelf[] }) {
               {shelves.map((shelf) => (
                 <button
                   key={shelf.id}
-                  className={`shelf-item${addedIds.has(shelf.id) ? ' shelf-item--added' : failedIds.has(shelf.id) ? ' shelf-item--failed' : ''}`}
+                  className={`shelf-item${shelf.id === currentShelfId ? ' shelf-item--current' : failedIds.has(shelf.id) ? ' shelf-item--failed' : ''}`}
                   onClick={() => handleAddToShelf(shelf.id)}
-                  disabled={addedIds.has(shelf.id)}
                 >
-                  {shelf.title}
+                  {shelf.id === currentShelfId ? `✓ ${shelf.title}` : shelf.title}
                 </button>
               ))}
             </div>
           ) : (
             <button
-              className={`shelf-bar-btn${addedIds.size > 0 ? ' shelf-bar-btn--added' : ''}`}
+              className={`shelf-bar-btn${currentShelfId !== undefined ? ' shelf-bar-btn--added' : ''}`}
               onClick={() => setShelfOpen(true)}
             >
-              {addedIds.size > 0 ? '✓ Added to collection' : '+ Add to collection'}
+              {currentShelfId !== undefined ? `In: ${currentShelf?.title ?? 'Collection'}` : '+ Add to collection'}
             </button>
           )}
         </div>
