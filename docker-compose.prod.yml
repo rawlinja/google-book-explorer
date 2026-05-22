@@ -1,7 +1,0 @@
-services:
-  frontend:
-    restart: always
-  api:
-    restart: always
-  redis:
-    restart: always

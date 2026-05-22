@@ -1,29 +1,26 @@
 services:
-  frontend:
+  nginx:
     build:
-      context: ./frontend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: nginx/Dockerfile
     ports:
-      - "3000:3000"
-    env_file: .env
-    volumes:
-      - ./frontend/src:/app/src
+      - "3000:80"
     depends_on:
       - api
     networks:
       - app-network
+    restart: always
 
   api:
     build:
       context: ./api
       dockerfile: Dockerfile
-    ports:
-      - "3001:3001"
     env_file: .env
     depends_on:
       - redis
     networks:
       - app-network
+    restart: always
 
   redis:
     image: redis:7-alpine
@@ -31,6 +28,7 @@ services:
       - redis_data:/data
     networks:
       - app-network
+    restart: always
 
 volumes:
   redis_data:
