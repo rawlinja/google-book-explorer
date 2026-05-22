@@ -2,94 +2,92 @@
 
 ## Overview
 
-Google Book Explorer is a full-stack book search application with an AI-powered query layer. Users authenticate via Google OAuth, then search for books by title, author, or ISBN — GPT-4.1 picks the right Google Books filter via tool use.
+Google Book Explorer is a full-stack book search application with an AI-powered query layer. Users authenticate via Google OAuth, then search for books — GPT-4.1 decides which Google Books filter to apply based on the query.
 
 ```mermaid
 flowchart TD
-    Browser["Browser\nReact 19 + esbuild\n:3000"]
+    Browser["Browser"]
 
-    Browser -->|"GET /auth/google"| API["API\nFastify 5 + TypeScript\n:3001"]
-    API -->|"302 → Google OAuth"| Google["Google OAuth"]
-    Google -->|"callback with code"| API
-    API -->|"set session cookie"| Browser
-    API -->|"tokens:{session.id}"| RD[("Redis\n:6379")]
-
-    Browser -->|"fetch with credentials"| API
-    API -->|"requireAuth — session check"| API
-    API -->|"tool use: intitle / inauthor / isbn"| OAI["OpenAI\nGPT-4.1 Responses API"]
-    OAI -->|"selected tool + args"| API
-    API -->|"filtered query + startIndex"| GBooks["Google Books API"]
-    GBooks -->|"items + totalItems"| API
-    API -->|"session store — sess:{id}"| RD
+    Browser -->|"all traffic"| NGX["nginx :3000\nstatic files + reverse proxy"]
+    NGX -->|"/api  /auth  /health"| API["API\nFastify 5 + TypeScript\n:3001"]
+    API -->|"OAuth redirect"| Google["Google OAuth"]
+    Google -->|"callback"| NGX
+    NGX -->|"proxy"| API
+    API <-->|"sessions + tokens"| RD[("Redis :6379")]
+    API -->|"query routing"| OAI["OpenAI GPT-4.1"]
+    API -->|"book search"| GBooks["Google Books API"]
 ```
 
 ## Services
 
-### Frontend (`frontend/`)
+### nginx
 
-- React 19, esbuild, pnpm
-- Dev server on `:3000` with SPA fallback
-- `process.env.API_URL` injected at build time via esbuild `define`
-- State: Zustand (`isLoggedIn`, `expiresAt`, `checking`) + TanStack Query for book fetches
-- Session-expiry timer reads `expiresAt` from `/api/me` and auto-logs out when it fires
-- Last search results and query persisted in `sessionStorage` via Zustand `persist`
+nginx is the single entry point on port 3000. In production it serves the pre-built React app as static files. In development it volume-mounts the build output so the frontend updates on file changes without rebuilding the container.
+
+All `/api`, `/auth`, and `/health` requests are proxied through to Fastify. The browser always talks to one origin — there's no hardcoded API host in the frontend.
+
+### Frontend
+
+React 19 with esbuild and pnpm. State is split between Zustand (session, collections) and TanStack Query (book search results). Collection state is tracked locally so moving a book between shelves doesn't require a round-trip to check its current location.
 
 Routes:
+
 | Path | Component | Notes |
 |------|-----------|-------|
 | `/` | — | Redirects to `/books` or `/authorize` based on auth state |
 | `/books` | `Books` | Protected — book search UI with pagination |
 | `/authorize` | `Authorize` | Google OAuth login page |
-| `/auth-signed-in` | `AuthSignedIn` | OAuth landing; calls `/api/me`, redirects to `/books` |
+| `/auth-signed-in` | `AuthSignedIn` | OAuth landing; sets session state, redirects to `/books` |
 
-### API (`api/`)
+### API
 
-- Fastify 5 + TypeScript, pnpm
-- Config validated with Zod at startup — process exits immediately on missing vars
-- Auth: `openid-client` PKCE flow, Redis-backed Fastify session (no JWT)
+Fastify 5 with TypeScript and pnpm. Configuration is validated with Zod at startup — the process exits immediately if any required environment variable is missing, so misconfiguration fails loudly at boot rather than silently at runtime.
 
-**Why session-only, no JWT:** Every request already hits Redis to load the session. A JWT would buy stateless verification but we'd still need Redis to store and revoke Google tokens — so the stateless benefit doesn't apply. One mechanism is simpler than two.
+Auth uses Google OAuth with PKCE via `openid-client`. Sessions are stored in Redis (no JWT). The reason: every request already hits Redis to load the session, so a JWT would add complexity without removing the Redis dependency.
 
 Routes:
+
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
 | GET | `/health` | — | Health check |
 | GET | `/auth/google` | — | Start OAuth PKCE flow |
 | GET | `/auth/google/callback` | — | Exchange code, set session |
-| POST | `/auth/logout` | — | Delete Redis tokens, destroy session, clear cookie |
-| GET | `/api/me` | session | Returns `{ isLoggedIn, expiresAt }` |
-| GET | `/api/books/search?q=&page=` | session | LLM tool use → Google Books |
+| POST | `/auth/logout` | — | Clear tokens and destroy session |
+| GET | `/api/me` | session | Current user + session expiry |
+| GET | `/api/books/search?q=&page=` | session | AI-routed book search |
 
 ## Auth Flow
 
-1. Frontend redirects to `GET /auth/google`.
-2. API generates PKCE `codeVerifier` + `state`, stores both in the Redis-backed session, redirects to Google.
-3. Google redirects to `GET /auth/google/callback`; API exchanges the code, stores Google tokens in Redis under `tokens:{session.id}`, sets `session.authenticated = true` and `session.expiresAt = Date.now() + 3600000`.
-4. `requireAuth` hook checks `req.session.authenticated` on every protected route.
-5. `POST /auth/logout` deletes the Redis token entry, destroys the session, and explicitly clears the `sessionId` cookie so the browser discards it immediately.
+1. The user clicks login; the frontend redirects to `/auth/google`.
+2. The API generates a PKCE challenge and redirects the browser to Google.
+3. Google redirects back to `/auth/google/callback`. The API exchanges the code for Google tokens, stores them in Redis, and marks the session as authenticated.
+4. Every subsequent API request is checked by the `requireAuth` hook.
+5. Logout deletes the tokens from Redis, destroys the session, and clears the cookie — nothing is left server-side.
 
 ## Book Search Flow
 
-1. Frontend sends `GET /api/books/search?q=<query>&page=<n>`.
-2. `requireAuth` checks session.
-3. `startIndex = (page - 1) * 10` is computed and passed to `searchBooks`.
-4. GPT-4.1 via the Responses API selects one of three tools: `get_books_by_title`, `get_books_by_author`, `get_books_by_isbn`.
-5. The selected tool calls the Google Books API with the appropriate qualifier (`intitle:`, `inauthor:`, `isbn:`) and `startIndex`.
-6. Response includes `{ totalItems, items }` — `totalItems` comes from the Google Books API, enabling frontend pagination.
+1. The frontend sends a search query to `/api/books/search`.
+2. The API passes the query to GPT-4.1, which selects the right search type: by title, author, or ISBN.
+3. The API calls the Google Books API with the appropriate filter and returns paginated results.
+4. The frontend uses the total count from Google to render page controls.
 
 ## Source References
 
 | File | Purpose |
 |------|---------|
+| `nginx/nginx.conf` | Production nginx config |
+| `nginx/nginx.dev.conf` | Dev nginx config (adds live-reload proxy) |
+| `nginx/Dockerfile` | Multi-stage build: esbuild frontend → nginx:alpine |
 | `api/src/config/index.ts` | Zod env schema |
 | `api/src/app.ts` | Fastify instance, plugin + route registration |
-| `api/src/plugins/redis.ts` | ioredis client as Fastify decorator |
+| `api/src/plugins/redis.ts` | Redis client |
 | `api/src/hooks/requireAuth.ts` | Session auth guard |
-| `api/src/routes/auth.ts` | Google OAuth PKCE routes |
+| `api/src/routes/auth.ts` | Google OAuth routes |
 | `api/src/routes/me.ts` | `/api/me` |
 | `api/src/routes/books.ts` | `/api/books/search` |
 | `api/src/services/bookSearch.ts` | OpenAI tool-use orchestration |
 | `api/src/services/googleBooks.ts` | Google Books API client |
-| `frontend/src/store/index.ts` | Zustand session state |
-| `frontend/src/store/books.ts` | Zustand book search cache |
-| `frontend/src/lib/api.ts` | `getMe`, `login`, `logout` helpers |
+| `frontend/src/store/index.ts` | Session state |
+| `frontend/src/store/books.ts` | Book search cache |
+| `frontend/src/store/collections.ts` | Collection state |
+| `frontend/src/lib/api.ts` | API helper functions |
