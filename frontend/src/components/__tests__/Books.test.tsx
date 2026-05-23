@@ -63,9 +63,9 @@ describe('Books', () => {
 
   it('redirects to /authorize on 401', async () => {
     const originalLocation = window.location;
-    // @ts-ignore
+    // @ts-expect-error
     delete window.location;
-    // @ts-ignore
+    // @ts-expect-error
     window.location = { href: 'http://localhost/' };
 
     vi.mocked(fetch).mockResolvedValueOnce(new Response(null, { status: 401 }));
@@ -74,7 +74,7 @@ describe('Books', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Search' }));
     await waitFor(() => expect(window.location.href).toBe('/authorize'));
 
-    // @ts-ignore
+    // @ts-expect-error
     window.location = originalLocation;
   });
 
