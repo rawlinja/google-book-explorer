@@ -41,6 +41,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
 
     req.session.codeVerifier = codeVerifier;
     req.session.state = state;
+    req.log.info('auth.login.started');
 
     const url = openidClient.buildAuthorizationUrl(oidcConfig, {
       redirect_uri: config.GOOGLE_REDIRECT_URI,
@@ -62,6 +63,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
         pkceCodeVerifier: req.session.codeVerifier,
         expectedState: req.session.state,
       });
+      req.log.info('auth.callback.tokens_exchanged');
 
       delete req.session.codeVerifier;
       delete req.session.state;
@@ -75,13 +77,14 @@ export default async function authRoutes(fastify: FastifyInstance) {
           idToken: tokens.id_token,
         })
       );
+      req.log.info('auth.callback.tokens_stored');
 
       req.session.authenticated = true;
       req.session.expiresAt = Date.now() + TOKEN_TTL * 1000;
 
       return reply.redirect('/auth-signed-in');
     } catch (err) {
-      req.log.error({ err }, 'OAuth callback failed');
+      req.log.error({ err }, 'auth.callback.failed');
       return reply.redirect('/authorize');
     }
   });
@@ -90,6 +93,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
     await fastify.redis.del(`tokens:${req.session.sessionId}`);
     await req.session.destroy();
     reply.clearCookie('sessionId', { path: '/' });
+    req.log.info('auth.logout.completed');
     return reply.send({ ok: true });
   });
 }
