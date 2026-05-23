@@ -1,24 +1,19 @@
 import '@testing-library/jest-dom';
-import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import Books from '../Books';
-import * as api from '../../lib/api';
-import useCollectionsStore from '../../store/collections';
 import useBooksStore from '../../store/books';
 
-vi.mock('../../lib/api', () => ({
-  fetchShelves: vi.fn().mockResolvedValue([]),
-  addToShelf: vi.fn().mockResolvedValue(undefined),
-  removeFromShelf: vi.fn().mockResolvedValue(undefined),
-}));
-
-vi.stubGlobal('fetch', vi.fn());
-
-const MOCK_SHELVES: api.Shelf[] = [
-  { id: 2, title: 'Favorites', volumeCount: 0 },
-  { id: 3, title: 'To Read', volumeCount: 0 },
-];
+vi.mock('../../lib/api', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../lib/api')>();
+  return {
+    ...actual,
+    fetchShelves: vi.fn().mockResolvedValue([]),
+    addToShelf: vi.fn().mockResolvedValue(undefined),
+    removeFromShelf: vi.fn().mockResolvedValue(undefined),
+  };
+});
 
 const MOCK_BOOKS = {
   totalItems: 2,
@@ -28,7 +23,7 @@ const MOCK_BOOKS = {
   ],
 };
 
-function renderBooks() {
+export function renderBooks() {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={client}>
@@ -39,12 +34,11 @@ function renderBooks() {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  useCollectionsStore.setState({ bookCollections: {} });
+  vi.stubGlobal('fetch', vi.fn());
   useBooksStore.setState({ books: [], totalBooks: 0, lastQuery: '' });
-  vi.mocked(fetch).mockReset();
 });
 
-describe('Books — search UI', () => {
+describe('Books', () => {
   it('renders the search input and button', () => {
     renderBooks();
     expect(screen.getByPlaceholderText('Search for a book...')).toBeInTheDocument();
@@ -65,6 +59,23 @@ describe('Books — search UI', () => {
     fireEvent.change(screen.getByPlaceholderText('Search for a book...'), { target: { value: 'react' } });
     fireEvent.click(screen.getByRole('button', { name: 'Search' }));
     await waitFor(() => expect(screen.getByText(/Error fetching books/)).toBeInTheDocument());
+  });
+
+  it('redirects to /authorize on 401', async () => {
+    const originalLocation = window.location;
+    // @ts-ignore
+    delete window.location;
+    // @ts-ignore
+    window.location = { href: 'http://localhost/' };
+
+    vi.mocked(fetch).mockResolvedValueOnce(new Response(null, { status: 401 }));
+    renderBooks();
+    fireEvent.change(screen.getByPlaceholderText('Search for a book...'), { target: { value: 'react' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Search' }));
+    await waitFor(() => expect(window.location.href).toBe('/authorize'));
+
+    // @ts-ignore
+    window.location = originalLocation;
   });
 
   it('shows no books message when results are empty', async () => {
@@ -97,58 +108,5 @@ describe('Books — search UI', () => {
     fireEvent.change(input, { target: { value: 'clean code' } });
     fireEvent.keyDown(input, { key: 'Enter' });
     await waitFor(() => expect(screen.getByText('Clean Code')).toBeInTheDocument());
-  });
-});
-
-describe('BookCard — shelf management', () => {
-  async function renderWithBooks() {
-    vi.mocked(fetch).mockResolvedValueOnce(
-      new Response(JSON.stringify(MOCK_BOOKS), { status: 200 })
-    );
-    vi.mocked(api.fetchShelves).mockResolvedValueOnce(MOCK_SHELVES);
-    renderBooks();
-    fireEvent.change(screen.getByPlaceholderText('Search for a book...'), { target: { value: 'code' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Search' }));
-    await waitFor(() => expect(screen.getByText('Clean Code')).toBeInTheDocument());
-  }
-
-  it('renders book title and author', async () => {
-    await renderWithBooks();
-    expect(screen.getByText('Clean Code')).toBeInTheDocument();
-    expect(screen.getByText('Robert C. Martin')).toBeInTheDocument();
-  });
-
-  it('shows "+ Add to collection" button when book is not in a collection', async () => {
-    await renderWithBooks();
-    expect(screen.getAllByRole('button', { name: '+ Add to collection' })).toHaveLength(2);
-  });
-
-  it('opens the shelf list when "+ Add to collection" is clicked', async () => {
-    await renderWithBooks();
-    fireEvent.click(screen.getAllByRole('button', { name: '+ Add to collection' })[0]);
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Favorites' })).toBeInTheDocument());
-  });
-
-  it('adds book to a shelf and updates the button label', async () => {
-    await renderWithBooks();
-    fireEvent.click(screen.getAllByRole('button', { name: '+ Add to collection' })[0]);
-    await waitFor(() => screen.getByRole('button', { name: 'Favorites' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Favorites' }));
-    await waitFor(() => expect(api.addToShelf).toHaveBeenCalledWith(2, 'vol1'));
-  });
-
-  it('rolls back collection state when the API call fails', async () => {
-    vi.mocked(api.addToShelf).mockRejectedValueOnce(new Error('network error'));
-    await renderWithBooks();
-    fireEvent.click(screen.getAllByRole('button', { name: '+ Add to collection' })[0]);
-    await waitFor(() => screen.getByRole('button', { name: 'Favorites' }));
-
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Favorites' }));
-    });
-
-    await waitFor(() =>
-      expect(useCollectionsStore.getState().bookCollections['vol1']).toBeUndefined()
-    );
   });
 });
