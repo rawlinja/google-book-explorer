@@ -63,9 +63,9 @@ describe('Books', () => {
 
   it('redirects to /authorize on 401', async () => {
     const originalLocation = window.location;
-    // @ts-expect-error
+    // @ts-expect-error -- jsdom does not allow reassigning window.location directly
     delete window.location;
-    // @ts-expect-error
+    // @ts-expect-error -- partial mock for redirect testing
     window.location = { href: 'http://localhost/' };
 
     vi.mocked(fetch).mockResolvedValueOnce(new Response(null, { status: 401 }));
@@ -74,7 +74,7 @@ describe('Books', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Search' }));
     await waitFor(() => expect(window.location.href).toBe('/authorize'));
 
-    // @ts-expect-error
+    // @ts-expect-error -- restoring original after mock
     window.location = originalLocation;
   });
 
