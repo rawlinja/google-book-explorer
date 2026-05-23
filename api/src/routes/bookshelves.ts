@@ -16,7 +16,8 @@ export default async function bookshelvesRoutes(fastify: FastifyInstance) {
     try {
       const shelves = await getBookshelves(req.session.sessionId, fastify.redis);
       return reply.send({ shelves });
-    } catch {
+    } catch (err) {
+      req.log.error({ err }, 'bookshelf.get.failed');
       return reply.status(502).send({ error: 'Failed to fetch bookshelves' });
     }
   });
@@ -40,7 +41,8 @@ export default async function bookshelvesRoutes(fastify: FastifyInstance) {
         fastify.redis
       );
       return reply.send({ ok: true });
-    } catch {
+    } catch (err) {
+      req.log.error({ err, shelfId: paramParsed.data.shelfId, volumeId: queryParsed.data.volumeId }, 'bookshelf.add.failed');
       return reply.status(502).send({ error: 'Failed to add book to shelf' });
     }
   });
@@ -67,7 +69,8 @@ export default async function bookshelvesRoutes(fastify: FastifyInstance) {
           fastify.redis
         );
         return reply.send({ ok: true });
-      } catch {
+      } catch (err) {
+        req.log.error({ err, shelfId: paramParsed.data.shelfId, volumeId: queryParsed.data.volumeId }, 'bookshelf.remove.failed');
         return reply.status(502).send({ error: 'Failed to remove book from shelf' });
       }
     }
