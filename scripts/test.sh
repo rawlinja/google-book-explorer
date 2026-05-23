@@ -1,10 +1,26 @@
 #!/bin/bash
 set -e
 
-echo "Running api tests..."
+echo "=== API ==="
+echo "-- typecheck"
+pnpm --dir api typecheck
+
+echo "-- format"
+pnpm --dir api format
+
+echo "-- tests"
 pnpm --dir api test
 
-echo "Running frontend tests..."
+echo ""
+echo "=== Frontend ==="
+echo "-- typecheck"
+pnpm --dir frontend typecheck
+
+echo "-- lint"
+pnpm --dir frontend lint
+
+echo "-- tests"
 pnpm --dir frontend test
 
-echo "All tests passed."
+echo ""
+echo "All checks passed."
