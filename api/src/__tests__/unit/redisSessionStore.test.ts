@@ -11,8 +11,7 @@ describe('RedisSessionStore.get', () => {
         expect(redis.get).toHaveBeenCalledWith('sess:abc');
         done();
       });
-    })
-  );
+    }));
 
   it('returns null when the key does not exist', () =>
     new Promise<void>((done) => {
@@ -22,8 +21,7 @@ describe('RedisSessionStore.get', () => {
         expect(session).toBeNull();
         done();
       });
-    })
-  );
+    }));
 
   it('forwards the Redis error to the callback', () =>
     new Promise<void>((done) => {
@@ -33,8 +31,7 @@ describe('RedisSessionStore.get', () => {
         expect(err).toBe(redisErr);
         done();
       });
-    })
-  );
+    }));
 });
 
 describe('RedisSessionStore.set', () => {
@@ -47,8 +44,7 @@ describe('RedisSessionStore.set', () => {
         expect(redis.setex).toHaveBeenCalledWith('sess:abc', 3600, JSON.stringify(session));
         done();
       });
-    })
-  );
+    }));
 
   it('defaults TTL to 3600 when cookie.maxAge is absent', () =>
     new Promise<void>((done) => {
@@ -58,8 +54,7 @@ describe('RedisSessionStore.set', () => {
         expect(redis.setex).toHaveBeenCalledWith('sess:abc', 3600, JSON.stringify(session));
         done();
       });
-    })
-  );
+    }));
 
   it('forwards the Redis error to the callback', () =>
     new Promise<void>((done) => {
@@ -69,8 +64,7 @@ describe('RedisSessionStore.set', () => {
         expect(err).toBe(redisErr);
         done();
       });
-    })
-  );
+    }));
 });
 
 describe('RedisSessionStore.destroy', () => {
@@ -82,8 +76,7 @@ describe('RedisSessionStore.destroy', () => {
         expect(redis.del).toHaveBeenCalledWith('sess:abc');
         done();
       });
-    })
-  );
+    }));
 
   it('forwards the Redis error to the callback', () =>
     new Promise<void>((done) => {
@@ -93,6 +86,5 @@ describe('RedisSessionStore.destroy', () => {
         expect(err).toBe(redisErr);
         done();
       });
-    })
-  );
+    }));
 });

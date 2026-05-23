@@ -33,26 +33,7 @@ export default async function bookshelvesRoutes(fastify: FastifyInstance) {
     }
 
     try {
-      await addToShelf(req.session.sessionId, paramParsed.data.shelfId, queryParsed.data.volumeId, fastify.redis);
-      return reply.send({ ok: true });
-    } catch {
-      return reply.status(502).send({ error: 'Failed to add book to shelf' });
-    }
-  });
-
-  fastify.post('/api/bookshelves/:shelfId/remove', { onRequest: requireAuth }, async (req, reply) => {
-    const paramParsed = shelfParamSchema.safeParse(req.params);
-    if (!paramParsed.success) {
-      return reply.status(400).send({ error: 'Invalid shelf ID' });
-    }
-
-    const queryParsed = addVolumeSchema.safeParse(req.query);
-    if (!queryParsed.success) {
-      return reply.status(400).send({ error: 'Missing or invalid query parameter: volumeId' });
-    }
-
-    try {
-      await removeFromShelf(
+      await addToShelf(
         req.session.sessionId,
         paramParsed.data.shelfId,
         queryParsed.data.volumeId,
@@ -60,7 +41,35 @@ export default async function bookshelvesRoutes(fastify: FastifyInstance) {
       );
       return reply.send({ ok: true });
     } catch {
-      return reply.status(502).send({ error: 'Failed to remove book from shelf' });
+      return reply.status(502).send({ error: 'Failed to add book to shelf' });
     }
   });
+
+  fastify.post(
+    '/api/bookshelves/:shelfId/remove',
+    { onRequest: requireAuth },
+    async (req, reply) => {
+      const paramParsed = shelfParamSchema.safeParse(req.params);
+      if (!paramParsed.success) {
+        return reply.status(400).send({ error: 'Invalid shelf ID' });
+      }
+
+      const queryParsed = addVolumeSchema.safeParse(req.query);
+      if (!queryParsed.success) {
+        return reply.status(400).send({ error: 'Missing or invalid query parameter: volumeId' });
+      }
+
+      try {
+        await removeFromShelf(
+          req.session.sessionId,
+          paramParsed.data.shelfId,
+          queryParsed.data.volumeId,
+          fastify.redis
+        );
+        return reply.send({ ok: true });
+      } catch {
+        return reply.status(502).send({ error: 'Failed to remove book from shelf' });
+      }
+    }
+  );
 }

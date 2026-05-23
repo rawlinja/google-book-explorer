@@ -24,7 +24,6 @@ vi.mock('../../plugins/redis.js', async () => {
   };
 });
 
-
 vi.mock('openid-client', async () => {
   const actual = await vi.importActual<typeof import('openid-client')>('openid-client');
   return { ...actual, discovery: vi.fn().mockResolvedValue({}) };

@@ -32,7 +32,9 @@ vi.mock('openid-client', async () => {
     randomPKCECodeVerifier: vi.fn().mockReturnValue('test-verifier'),
     calculatePKCECodeChallenge: vi.fn().mockResolvedValue('test-challenge'),
     randomState: vi.fn().mockReturnValue('test-state'),
-    buildAuthorizationUrl: vi.fn().mockReturnValue(new URL('https://accounts.google.com/o/oauth2/auth?mock=1')),
+    buildAuthorizationUrl: vi
+      .fn()
+      .mockReturnValue(new URL('https://accounts.google.com/o/oauth2/auth?mock=1')),
     authorizationCodeGrant: vi.fn().mockResolvedValue({
       access_token: 'mock-access-token',
       refresh_token: 'mock-refresh-token',

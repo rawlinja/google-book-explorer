@@ -1,9 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 beforeEach(() => {
-  vi.stubGlobal('fetch', vi.fn().mockResolvedValue(
-    new Response(JSON.stringify({ totalItems: 1, items: [] }), { status: 200 })
-  ));
+  vi.stubGlobal(
+    'fetch',
+    vi
+      .fn()
+      .mockResolvedValue(
+        new Response(JSON.stringify({ totalItems: 1, items: [] }), { status: 200 })
+      )
+  );
 });
 
 function getQueryParam(call: unknown): string {
@@ -15,19 +20,21 @@ describe('response parsing', () => {
   it('maps Google Books API response fields to BookItem', async () => {
     const apiResponse = {
       totalItems: 1,
-      items: [{
-        id: 'vol1',
-        volumeInfo: {
-          title: 'Clean Code',
-          authors: ['Robert C. Martin'],
-          categories: ['Programming'],
-          publishedDate: '2008-08-01',
-          description: 'A handbook of agile software craftsmanship.',
-          pageCount: 431,
-          imageLinks: { thumbnail: 'http://books.google.com/thumbnail.jpg' },
-          infoLink: 'https://books.google.com/books?id=vol1',
+      items: [
+        {
+          id: 'vol1',
+          volumeInfo: {
+            title: 'Clean Code',
+            authors: ['Robert C. Martin'],
+            categories: ['Programming'],
+            publishedDate: '2008-08-01',
+            description: 'A handbook of agile software craftsmanship.',
+            pageCount: 431,
+            imageLinks: { thumbnail: 'http://books.google.com/thumbnail.jpg' },
+            infoLink: 'https://books.google.com/books?id=vol1',
+          },
         },
-      }],
+      ],
     };
 
     vi.mocked(fetch).mockResolvedValueOnce(
@@ -50,15 +57,17 @@ describe('response parsing', () => {
   it('upgrades thumbnail URL from http to https', async () => {
     const apiResponse = {
       totalItems: 1,
-      items: [{
-        id: 'vol2',
-        volumeInfo: {
-          title: 'Test',
-          authors: [],
-          categories: [],
-          imageLinks: { thumbnail: 'http://books.google.com/image.jpg' },
+      items: [
+        {
+          id: 'vol2',
+          volumeInfo: {
+            title: 'Test',
+            authors: [],
+            categories: [],
+            imageLinks: { thumbnail: 'http://books.google.com/image.jpg' },
+          },
         },
-      }],
+      ],
     };
 
     vi.mocked(fetch).mockResolvedValueOnce(
@@ -73,13 +82,15 @@ describe('response parsing', () => {
   it('falls back to smallThumbnail when thumbnail is absent', async () => {
     const apiResponse = {
       totalItems: 1,
-      items: [{
-        id: 'vol4',
-        volumeInfo: {
-          title: 'Small Cover',
-          imageLinks: { smallThumbnail: 'http://books.google.com/small.jpg' },
+      items: [
+        {
+          id: 'vol4',
+          volumeInfo: {
+            title: 'Small Cover',
+            imageLinks: { smallThumbnail: 'http://books.google.com/small.jpg' },
+          },
         },
-      }],
+      ],
     };
 
     vi.mocked(fetch).mockResolvedValueOnce(

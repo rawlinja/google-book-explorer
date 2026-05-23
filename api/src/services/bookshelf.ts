@@ -27,7 +27,11 @@ async function getTokens(sessionId: string, redis: Redis): Promise<StoredTokens>
   return JSON.parse(raw) as StoredTokens;
 }
 
-async function refreshAndSave(sessionId: string, stored: StoredTokens, redis: Redis): Promise<StoredTokens> {
+async function refreshAndSave(
+  sessionId: string,
+  stored: StoredTokens,
+  redis: Redis
+): Promise<StoredTokens> {
   if (!stored.refreshToken) throw new Error('No refresh token available');
 
   const refreshed = await openidClient.refreshTokenGrant(oidcConfig, stored.refreshToken);

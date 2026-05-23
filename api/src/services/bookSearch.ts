@@ -41,7 +41,11 @@ const TOOLS: OpenAI.Responses.Tool[] = [
   },
 ];
 
-async function runTool(name: string, args: Record<string, string>, startIndex: number): Promise<GoogleBooksResult> {
+async function runTool(
+  name: string,
+  args: Record<string, string>,
+  startIndex: number
+): Promise<GoogleBooksResult> {
   switch (name) {
     case 'get_books_by_title':
       return searchByTitle(args.title, startIndex);

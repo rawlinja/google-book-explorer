@@ -45,15 +45,15 @@ describe('getBookshelves - read-only shelf filtering', () => {
     const redis = makeRedisMock();
     const allShelves = {
       items: [
-        { id: 1, title: 'My Google eBooks', volumeCount: 3 },   // read-only
+        { id: 1, title: 'My Google eBooks', volumeCount: 3 }, // read-only
         { id: 2, title: 'Favorites', volumeCount: 5 },
         { id: 3, title: 'Reading Now', volumeCount: 1 },
         { id: 4, title: 'To Read', volumeCount: 8 },
-        { id: 5, title: 'Have Read', volumeCount: 12 },          // read-only
-        { id: 6, title: 'Books For You', volumeCount: 0 },       // read-only
-        { id: 7, title: 'My eBooks', volumeCount: 2 },           // read-only
-        { id: 8, title: 'Purchased', volumeCount: 4 },           // read-only
-        { id: 9, title: 'Recently Viewed', volumeCount: 1 },     // read-only
+        { id: 5, title: 'Have Read', volumeCount: 12 }, // read-only
+        { id: 6, title: 'Books For You', volumeCount: 0 }, // read-only
+        { id: 7, title: 'My eBooks', volumeCount: 2 }, // read-only
+        { id: 8, title: 'Purchased', volumeCount: 4 }, // read-only
+        { id: 9, title: 'Recently Viewed', volumeCount: 1 }, // read-only
       ],
     };
 
@@ -90,7 +90,9 @@ describe('getBookshelves - token refresh failures', () => {
       .mockResolvedValueOnce(new Response(null, { status: 401 }));
 
     const { getBookshelves } = await import('../../services/bookshelf.js');
-    await expect(getBookshelves('session-id', redis as any)).rejects.toThrow('Google Bookshelf API error: 401');
+    await expect(getBookshelves('session-id', redis as any)).rejects.toThrow(
+      'Google Bookshelf API error: 401'
+    );
   });
 });
 

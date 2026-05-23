@@ -8,8 +8,14 @@ vi.mock('../../plugins/redis.js', async () => {
       const store: Record<string, string> = {};
       fastify.decorate('redis', {
         get: (k: string) => Promise.resolve(store[k] ?? null),
-        setex: (k: string, _ttl: number, v: string) => { store[k] = v; return Promise.resolve('OK'); },
-        del: (k: string) => { delete store[k]; return Promise.resolve(1); },
+        setex: (k: string, _ttl: number, v: string) => {
+          store[k] = v;
+          return Promise.resolve('OK');
+        },
+        del: (k: string) => {
+          delete store[k];
+          return Promise.resolve(1);
+        },
         on: () => {},
         quit: () => Promise.resolve(),
       });

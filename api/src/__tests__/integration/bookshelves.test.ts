@@ -89,7 +89,10 @@ describe('POST /api/bookshelves/:shelfId/add', () => {
   });
 
   it('returns 400 when shelfId is not a number', async () => {
-    const res = await app.inject({ method: 'POST', url: '/api/bookshelves/notanumber/add?volumeId=abc' });
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/bookshelves/notanumber/add?volumeId=abc',
+    });
     expect(res.statusCode).toBe(400);
   });
 

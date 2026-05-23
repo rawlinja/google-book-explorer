@@ -37,7 +37,10 @@ async function search(q: string, startIndex: number): Promise<GoogleBooksResult>
       authors: vi.authors ?? [],
       categories: vi.categories ?? [],
       ...((vi.imageLinks?.thumbnail ?? vi.imageLinks?.smallThumbnail) && {
-        thumbnail: (vi.imageLinks.thumbnail ?? vi.imageLinks.smallThumbnail).replace('http://', 'https://'),
+        thumbnail: (vi.imageLinks.thumbnail ?? vi.imageLinks.smallThumbnail).replace(
+          'http://',
+          'https://'
+        ),
       }),
       ...(vi.publishedDate && { publishedDate: vi.publishedDate }),
       ...(vi.description && { description: vi.description }),
@@ -53,7 +56,10 @@ export async function searchByTitle(title: string, startIndex: number): Promise<
   return search(`intitle:${title}`, startIndex);
 }
 
-export async function searchByAuthor(author: string, startIndex: number): Promise<GoogleBooksResult> {
+export async function searchByAuthor(
+  author: string,
+  startIndex: number
+): Promise<GoogleBooksResult> {
   return search(`inauthor:${author}`, startIndex);
 }
 

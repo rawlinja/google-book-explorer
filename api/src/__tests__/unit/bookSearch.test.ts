@@ -28,7 +28,9 @@ beforeEach(() => vi.clearAllMocks());
 describe('searchBooks', () => {
   it('throws when the model returns malformed JSON in tool call arguments', async () => {
     mockCreate.mockResolvedValueOnce({
-      output: [{ type: 'function_call', name: 'get_books_by_title', arguments: '{not: valid json}' }],
+      output: [
+        { type: 'function_call', name: 'get_books_by_title', arguments: '{not: valid json}' },
+      ],
     });
 
     const { searchBooks } = await import('../../services/bookSearch.js');
