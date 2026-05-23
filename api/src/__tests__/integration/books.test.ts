@@ -46,6 +46,11 @@ describe('GET /api/books/search', () => {
     expect(res.statusCode).toBe(400);
   });
 
+  it('returns 400 when page is less than 1', async () => {
+    const res = await app.inject({ method: 'GET', url: '/api/books/search?q=test&page=0' });
+    expect(res.statusCode).toBe(400);
+  });
+
   it('returns books and totalItems', async () => {
     const { searchBooks } = await import('../../services/bookSearch.js');
     vi.mocked(searchBooks).mockResolvedValueOnce(MOCK_BOOKS);

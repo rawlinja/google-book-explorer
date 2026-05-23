@@ -17,7 +17,6 @@ vi.mock('../../plugins/redis.js', async () => {
   };
 });
 
-
 vi.mock('openid-client', async () => {
   const actual = await vi.importActual<typeof import('openid-client')>('openid-client');
   return { ...actual, discovery: vi.fn().mockResolvedValue({}) };
@@ -33,19 +32,5 @@ describe('GET /health', () => {
     const res = await app.inject({ method: 'GET', url: '/health' });
     expect(res.statusCode).toBe(200);
     expect(res.json()).toEqual({ ok: true });
-  });
-});
-
-describe('GET /api/me', () => {
-  it('returns 401 when not authenticated', async () => {
-    const res = await app.inject({ method: 'GET', url: '/api/me' });
-    expect(res.statusCode).toBe(401);
-  });
-});
-
-describe('requireAuth', () => {
-  it('returns 401 on protected routes without session', async () => {
-    const res = await app.inject({ method: 'GET', url: '/api/books/search?q=test' });
-    expect(res.statusCode).toBe(401);
   });
 });

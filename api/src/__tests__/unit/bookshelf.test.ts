@@ -39,6 +39,34 @@ beforeEach(() => {
   vi.stubGlobal('fetch', vi.fn());
 });
 
+describe('getBookshelves - read-only shelf filtering', () => {
+  it('excludes read-only shelves from the result', async () => {
+    const redis = makeRedisMock();
+    const allShelves = {
+      items: [
+        { id: 1, title: 'My Google eBooks', volumeCount: 3 },   // read-only
+        { id: 2, title: 'Favorites', volumeCount: 5 },
+        { id: 3, title: 'Reading Now', volumeCount: 1 },
+        { id: 4, title: 'To Read', volumeCount: 8 },
+        { id: 5, title: 'Have Read', volumeCount: 12 },          // read-only
+        { id: 6, title: 'Books For You', volumeCount: 0 },       // read-only
+        { id: 7, title: 'My eBooks', volumeCount: 2 },           // read-only
+        { id: 8, title: 'Purchased', volumeCount: 4 },           // read-only
+        { id: 9, title: 'Recently Viewed', volumeCount: 1 },     // read-only
+      ],
+    };
+
+    vi.mocked(fetch).mockResolvedValueOnce(
+      new Response(JSON.stringify(allShelves), { status: 200 })
+    );
+
+    const { getBookshelves } = await import('../../services/bookshelf.js');
+    const shelves = await getBookshelves('session-id', redis as any);
+
+    expect(shelves.map((s) => s.id)).toEqual([2, 3, 4]);
+  });
+});
+
 describe('getBookshelves - token refresh', () => {
   it('refreshes token on 401 and retries the request', async () => {
     const redis = makeRedisMock();

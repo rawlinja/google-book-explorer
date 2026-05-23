@@ -52,6 +52,26 @@ describe('GET /auth/google', () => {
     expect(res.statusCode).toBe(302);
     expect(res.headers.location).toContain('accounts.google.com');
   });
+
+  it('stores codeVerifier and state in the session', async () => {
+    let capturedSession: Record<string, unknown> = {};
+
+    const pkceApp = await buildApp();
+    pkceApp.addHook('onSend', async (req) => {
+      capturedSession = {
+        codeVerifier: req.session.codeVerifier,
+        state: req.session.state,
+      };
+    });
+    await pkceApp.ready();
+
+    await pkceApp.inject({ method: 'GET', url: '/auth/google' });
+
+    expect(capturedSession.codeVerifier).toBe('test-verifier');
+    expect(capturedSession.state).toBe('test-state');
+
+    await pkceApp.close();
+  });
 });
 
 describe('GET /auth/google/callback', () => {
