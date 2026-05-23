@@ -19,7 +19,10 @@ export default async function booksRoutes(fastify: FastifyInstance) {
     const startIndex = (page - 1) * 10;
     const t0 = Date.now();
     const { items, totalItems } = await searchBooks(q, startIndex);
-    req.log.info({ q, page, totalItems, itemCount: items.length, elapsed_ms: Date.now() - t0 }, 'books.search.completed');
+    req.log.info(
+      { q, page, totalItems, itemCount: items.length, elapsed_ms: Date.now() - t0 },
+      'books.search.completed'
+    );
 
     return reply.send({ totalItems, items });
   });
