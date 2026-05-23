@@ -2,7 +2,7 @@
 
 ## Overview
 
-Google Book Explorer is a full-stack book search application with an AI-powered query layer. Users authenticate via Google OAuth, then search for books — GPT-4.1 decides which Google Books filter to apply based on the query.
+Google Book Explorer is a full-stack book search application with an AI-powered query layer. Users authenticate via Google OAuth, then search for books.  GPT-4.1 decides which Google Books filter to apply based on the query.
 
 ```mermaid
 flowchart TD
@@ -22,9 +22,9 @@ flowchart TD
 
 ### nginx
 
-nginx is the single entry point on port 3000. In production it serves the pre-built React app as static files. In development it volume-mounts the build output so the frontend updates on file changes without rebuilding the container.
+nginx is the single entry point on port 3000. In production it serves the pre-built React app as static files. In development it volume-mounts the build output so the frontend can update on file changes without needing to rebuild the container.
 
-All `/api`, `/auth`, and `/health` requests are proxied through to Fastify. The browser always talks to one origin — there's no hardcoded API host in the frontend.
+All `/api`, `/auth`, and `/health` requests are proxied through to Fastify.
 
 ### Frontend
 
@@ -41,9 +41,9 @@ Routes:
 
 ### API
 
-Fastify 5 with TypeScript and pnpm. Configuration is validated with Zod at startup — the process exits immediately if any required environment variable is missing, so misconfiguration fails loudly at boot rather than silently at runtime.
+Fastify 5 with TypeScript and pnpm. Configuration is validated with Zod at startup — the process exits immediately if any required environment variable is missing.
 
-Auth uses Google OAuth with PKCE via `openid-client`. Sessions are stored in Redis (no JWT). The reason: every request already hits Redis to load the session, so a JWT would add complexity without removing the Redis dependency.
+Auth uses Google OAuth with PKCE via `openid-client`. Sessions are stored in Redis (no JWT).
 
 Routes:
 
