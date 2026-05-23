@@ -2,6 +2,8 @@
 
 A full-stack book search application with Google Books integration and an AI-powered search layer. Search by title, author, or ISBN — GPT-4.1 figures out which filter to use so you don't have to. Add books directly to your Google library collections from the results.
 
+![Demo](docs/demo.gif)
+
 ## Architecture
 
 ```
