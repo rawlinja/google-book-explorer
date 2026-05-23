@@ -55,7 +55,7 @@ describe('GET /auth/google', () => {
 });
 
 describe('GET /auth/google/callback', () => {
-  it('marks session as authenticated and redirects to /auth-signed-in on success', async () => {
+  it('redirects to /auth-signed-in and stores tokens in Redis on success', async () => {
     const authedApp = await buildApp();
     authedApp.addHook('preHandler', async (req) => {
       req.session.codeVerifier = 'test-verifier';
@@ -70,6 +70,12 @@ describe('GET /auth/google/callback', () => {
 
     expect(res.statusCode).toBe(302);
     expect(res.headers.location).toBe('/auth-signed-in');
+
+    const sessionId = Object.keys(mockRedis).find((k) => k.startsWith('tokens:'));
+    expect(sessionId).toBeDefined();
+    const stored = JSON.parse(mockRedis[sessionId!]);
+    expect(stored.accessToken).toBe('mock-access-token');
+    expect(stored.refreshToken).toBe('mock-refresh-token');
 
     await authedApp.close();
   });

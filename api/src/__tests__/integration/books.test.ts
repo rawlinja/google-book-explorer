@@ -65,4 +65,12 @@ describe('GET /api/books/search', () => {
     await app.inject({ method: 'GET', url: '/api/books/search?q=python&page=2' });
     expect(mock).toHaveBeenCalledWith('python', 10);
   });
+
+  it('returns 500 when searchBooks throws', async () => {
+    const { searchBooks } = await import('../../services/bookSearch.js');
+    vi.mocked(searchBooks).mockRejectedValueOnce(new Error('OpenAI error'));
+
+    const res = await app.inject({ method: 'GET', url: '/api/books/search?q=error' });
+    expect(res.statusCode).toBe(500);
+  });
 });
