@@ -36,6 +36,7 @@ function makeRedisMock(tokenJson = JSON.stringify(STORED_TOKENS)) {
 }
 
 beforeEach(() => {
+  vi.clearAllMocks();
   vi.stubGlobal('fetch', vi.fn());
 });
 
@@ -130,6 +131,22 @@ describe('addToShelf', () => {
     );
   });
 
+  it('refreshes token on 401 and retries the request', async () => {
+    const redis = makeRedisMock();
+    const { refreshTokenGrant } = await import('openid-client');
+    vi.mocked(refreshTokenGrant).mockResolvedValueOnce(REFRESHED_TOKENS as any);
+
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(new Response(null, { status: 401 }))
+      .mockResolvedValueOnce(new Response(null, { status: 200 }));
+
+    const { addToShelf } = await import('../../services/bookshelf.js');
+    await addToShelf('session-id', 2, 'vol123', redis as any);
+
+    expect(refreshTokenGrant).toHaveBeenCalledOnce();
+    expect(fetch).toHaveBeenCalledTimes(2);
+  });
+
   it('throws when the Google API returns an error', async () => {
     const redis = makeRedisMock();
     vi.mocked(fetch).mockResolvedValueOnce(new Response(null, { status: 400 }));
@@ -137,6 +154,15 @@ describe('addToShelf', () => {
     const { addToShelf } = await import('../../services/bookshelf.js');
     await expect(addToShelf('session-id', 2, 'vol123', redis as any)).rejects.toThrow(
       'Google Bookshelf API error: 400'
+    );
+  });
+
+  it('throws when no tokens are stored for the session', async () => {
+    const redis = { get: vi.fn().mockResolvedValue(null), setex: vi.fn() };
+
+    const { addToShelf } = await import('../../services/bookshelf.js');
+    await expect(addToShelf('no-session', 2, 'vol123', redis as any)).rejects.toThrow(
+      'No tokens found for session'
     );
   });
 });
@@ -155,6 +181,22 @@ describe('removeFromShelf', () => {
     );
   });
 
+  it('refreshes token on 401 and retries the request', async () => {
+    const redis = makeRedisMock();
+    const { refreshTokenGrant } = await import('openid-client');
+    vi.mocked(refreshTokenGrant).mockResolvedValueOnce(REFRESHED_TOKENS as any);
+
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(new Response(null, { status: 401 }))
+      .mockResolvedValueOnce(new Response(null, { status: 200 }));
+
+    const { removeFromShelf } = await import('../../services/bookshelf.js');
+    await removeFromShelf('session-id', 2, 'vol123', redis as any);
+
+    expect(refreshTokenGrant).toHaveBeenCalledOnce();
+    expect(fetch).toHaveBeenCalledTimes(2);
+  });
+
   it('throws when the Google API returns an error', async () => {
     const redis = makeRedisMock();
     vi.mocked(fetch).mockResolvedValueOnce(new Response(null, { status: 400 }));
@@ -162,6 +204,15 @@ describe('removeFromShelf', () => {
     const { removeFromShelf } = await import('../../services/bookshelf.js');
     await expect(removeFromShelf('session-id', 2, 'vol123', redis as any)).rejects.toThrow(
       'Google Bookshelf API error: 400'
+    );
+  });
+
+  it('throws when no tokens are stored for the session', async () => {
+    const redis = { get: vi.fn().mockResolvedValue(null), setex: vi.fn() };
+
+    const { removeFromShelf } = await import('../../services/bookshelf.js');
+    await expect(removeFromShelf('no-session', 2, 'vol123', redis as any)).rejects.toThrow(
+      'No tokens found for session'
     );
   });
 });
