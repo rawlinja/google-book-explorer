@@ -26,6 +26,15 @@ function makeFunctionCall(name: string, args: Record<string, string>) {
 beforeEach(() => vi.clearAllMocks());
 
 describe('searchBooks', () => {
+  it('throws when the model returns malformed JSON in tool call arguments', async () => {
+    mockCreate.mockResolvedValueOnce({
+      output: [{ type: 'function_call', name: 'get_books_by_title', arguments: '{not: valid json}' }],
+    });
+
+    const { searchBooks } = await import('../../services/bookSearch.js');
+    await expect(searchBooks('clean code', 0)).rejects.toThrow(SyntaxError);
+  });
+
   it('returns empty result when the model calls no tools', async () => {
     mockCreate.mockResolvedValueOnce({ output: [] });
 
