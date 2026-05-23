@@ -70,6 +70,34 @@ describe('response parsing', () => {
     expect(result.items[0].thumbnail).toBe('https://books.google.com/image.jpg');
   });
 
+  it('falls back to smallThumbnail when thumbnail is absent', async () => {
+    const apiResponse = {
+      totalItems: 1,
+      items: [{
+        id: 'vol4',
+        volumeInfo: {
+          title: 'Small Cover',
+          imageLinks: { smallThumbnail: 'http://books.google.com/small.jpg' },
+        },
+      }],
+    };
+
+    vi.mocked(fetch).mockResolvedValueOnce(
+      new Response(JSON.stringify(apiResponse), { status: 200 })
+    );
+
+    const { searchByTitle } = await import('../../services/googleBooks.js');
+    const result = await searchByTitle('Small Cover', 0);
+    expect(result.items[0].thumbnail).toBe('https://books.google.com/small.jpg');
+  });
+
+  it('throws when the Google Books API returns a non-ok response', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(new Response(null, { status: 503 }));
+
+    const { searchByTitle } = await import('../../services/googleBooks.js');
+    await expect(searchByTitle('anything', 0)).rejects.toThrow('Google Books API error: 503');
+  });
+
   it('handles missing optional fields gracefully', async () => {
     const apiResponse = {
       totalItems: 1,
