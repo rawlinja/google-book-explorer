@@ -100,3 +100,41 @@ describe('removeFromShelf', () => {
     expect(window.location.href).toBe('/authorize');
   });
 });
+
+describe('fetchBooks', () => {
+  it('returns totalBooks and items on success', async () => {
+    const payload = {
+      totalItems: 42,
+      items: [{ id: 'vol1', title: 'Clean Code', authors: ['Robert C. Martin'] }],
+    };
+    vi.mocked(fetch).mockResolvedValueOnce(
+      new Response(JSON.stringify(payload), { status: 200 })
+    );
+    const { fetchBooks } = await import('../api');
+    const result = await fetchBooks('clean code', 1);
+    expect(result.totalBooks).toBe(42);
+    expect(result.items[0].title).toBe('Clean Code');
+  });
+
+  it('returns empty items array when the response omits the items field', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(
+      new Response(JSON.stringify({ totalItems: 0 }), { status: 200 })
+    );
+    const { fetchBooks } = await import('../api');
+    const result = await fetchBooks('nothing', 1);
+    expect(result.items).toEqual([]);
+  });
+
+  it('redirects to /authorize and throws on 401', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(new Response(null, { status: 401 }));
+    const { fetchBooks } = await import('../api');
+    await expect(fetchBooks('react', 1)).rejects.toThrow('Unauthorized');
+    expect(window.location.href).toBe('/authorize');
+  });
+
+  it('throws on non-ok response', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(new Response(null, { status: 500 }));
+    const { fetchBooks } = await import('../api');
+    await expect(fetchBooks('react', 1)).rejects.toThrow('HTTP error! status: 500');
+  });
+});
