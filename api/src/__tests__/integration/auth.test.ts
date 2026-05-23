@@ -95,11 +95,21 @@ describe('GET /auth/google/callback', () => {
 });
 
 describe('POST /auth/logout', () => {
-  it('returns ok and clears the session cookie', async () => {
-    const res = await app.inject({ method: 'POST', url: '/auth/logout' });
+  it('returns ok and calls Redis del to remove the token', async () => {
+    const delSpy = vi.fn().mockResolvedValue(1);
+
+    const logoutApp = await buildApp();
+    // Override just the del spy on the already-registered redis decorator
+    logoutApp.addHook('onRequest', async (req) => {
+      (req.server as any).redis.del = delSpy;
+    });
+    await logoutApp.ready();
+
+    const res = await logoutApp.inject({ method: 'POST', url: '/auth/logout' });
     expect(res.statusCode).toBe(200);
     expect(res.json()).toEqual({ ok: true });
-    const cookie = res.headers['set-cookie'];
-    expect(cookie).toBeDefined();
+    expect(delSpy).toHaveBeenCalledWith(expect.stringMatching(/^tokens:/));
+
+    await logoutApp.close();
   });
 });
