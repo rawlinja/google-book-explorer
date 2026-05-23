@@ -1,6 +1,11 @@
 #!/bin/bash
 set -e
 
+BUILD=""
+if [[ "$1" == "--build" ]]; then
+  BUILD="--build"
+fi
+
 if [ ! -f .env ]; then
   echo "Error: .env file not found. Run: cp .env.example .env"
   exit 1
@@ -14,7 +19,7 @@ cleanup() {
 }
 trap 'cleanup; exit 0' INT TERM
 
-docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --remove-orphans
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --remove-orphans $BUILD
 
 echo ""
 echo "Services started:"
