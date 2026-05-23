@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import type { BookItem } from '../App';
+import type { BookItem } from '../lib/api';
 
 type BooksState = {
   books: BookItem[];

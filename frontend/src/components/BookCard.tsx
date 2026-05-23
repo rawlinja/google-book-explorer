@@ -1,0 +1,80 @@
+import { useState } from 'react';
+import type { BookItem } from '../lib/api';
+import useCollectionsStore from '../store/collections';
+import { addToShelf, removeFromShelf } from '../lib/api';
+import type { Shelf } from '../lib/api';
+
+const PLACEHOLDER_COVER = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="128" height="192" viewBox="0 0 128 192"%3E%3Crect width="128" height="192" fill="%23e5e7eb"/%3E%3Ctext x="64" y="104" font-family="sans-serif" font-size="12" fill="%239ca3af" text-anchor="middle"%3ENo cover%3C/text%3E%3C/svg%3E';
+
+export default function BookCard({ book, shelves }: { book: BookItem; shelves: Shelf[] }) {
+  const [shelfOpen, setShelfOpen] = useState(false);
+  const [failedIds, setFailedIds] = useState<Set<number>>(new Set());
+  const { bookCollections, setCollection, removeCollection } = useCollectionsStore();
+  const currentShelfId = bookCollections[book.id];
+  const currentShelf = shelves.find((s) => s.id === currentShelfId);
+
+  async function handleAddToShelf(shelfId: number) {
+    const prevShelfId = bookCollections[book.id];
+
+    if (shelfId === prevShelfId) {
+      removeCollection(book.id);
+    } else {
+      setCollection(book.id, shelfId);
+    }
+    setTimeout(() => setShelfOpen(false), 300);
+
+    try {
+      if (shelfId === prevShelfId) {
+        await removeFromShelf(shelfId, book.id);
+      } else if (prevShelfId !== undefined) {
+        await removeFromShelf(prevShelfId, book.id);
+        await addToShelf(shelfId, book.id);
+      } else {
+        await addToShelf(shelfId, book.id);
+      }
+    } catch {
+      if (prevShelfId !== undefined) {
+        setCollection(book.id, prevShelfId);
+      } else {
+        removeCollection(book.id);
+      }
+      setFailedIds((prev) => new Set(prev).add(shelfId));
+      setTimeout(
+        () => setFailedIds((prev) => { const next = new Set(prev); next.delete(shelfId); return next; }),
+        2000
+      );
+    }
+  }
+
+  return (
+    <div className="book-card" onClick={() => { if (!shelfOpen) return; setShelfOpen(false); }}>
+      <img className="book-image" src={book.thumbnail ?? PLACEHOLDER_COVER} alt={book.title} />
+      <h3 className="book-title">{book.title}</h3>
+      <p className="book-author">{book.authors?.join(', ')}</p>
+      {shelves.length > 0 && (
+        <div className={`shelf-bar${shelfOpen ? ' shelf-bar--open' : ''}`} onClick={(e) => e.stopPropagation()}>
+          {shelfOpen ? (
+            <div className="shelf-list">
+              {shelves.map((shelf) => (
+                <button
+                  key={shelf.id}
+                  className={`shelf-item${shelf.id === currentShelfId ? ' shelf-item--current' : failedIds.has(shelf.id) ? ' shelf-item--failed' : ''}`}
+                  onClick={() => handleAddToShelf(shelf.id)}
+                >
+                  {shelf.id === currentShelfId ? `✓ ${shelf.title}` : shelf.title}
+                </button>
+              ))}
+            </div>
+          ) : (
+            <button
+              className={`shelf-bar-btn${currentShelfId !== undefined ? ' shelf-bar-btn--added' : ''}`}
+              onClick={() => setShelfOpen(true)}
+            >
+              {currentShelfId !== undefined ? `In: ${currentShelf?.title ?? 'Collection'}` : '+ Add to collection'}
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}

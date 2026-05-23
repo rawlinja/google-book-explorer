@@ -1,3 +1,15 @@
+export type BookItem = {
+  id: string;
+  title: string;
+  authors?: string[];
+  thumbnail?: string;
+};
+
+export type BookVolume = {
+  totalItems: number;
+  items: BookItem[];
+};
+
 export type MeResponse = {
   isLoggedIn: boolean;
   expiresAt: number;
@@ -56,4 +68,16 @@ export async function removeFromShelf(shelfId: number, volumeId: string): Promis
     throw new Error('Unauthorized');
   }
   if (!res.ok) throw new Error(`Failed to remove from shelf: ${res.status}`);
+}
+
+export async function fetchBooks(text: string, page: number): Promise<{ totalBooks: number; items: BookItem[] }> {
+  const url = `${process.env.API_URL}/api/books/search?q=${encodeURIComponent(text)}&page=${page}`;
+  const res = await fetch(url, { credentials: 'include' });
+  if (res.status === 401) {
+    window.location.href = '/authorize';
+    throw new Error('Unauthorized');
+  }
+  if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+  const data = (await res.json()) as BookVolume;
+  return { totalBooks: data.totalItems, items: data.items || [] };
 }

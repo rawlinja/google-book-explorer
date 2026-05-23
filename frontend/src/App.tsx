@@ -10,18 +10,6 @@ import { getMe, logout } from './lib/api';
 
 import './styles/App.css';
 
-export type BookItem = {
-  id: string;
-  title: string;
-  authors?: string[];
-  thumbnail?: string;
-};
-
-export type BookVolume = {
-  totalItems: number;
-  items: BookItem[];
-};
-
 const queryClient = new QueryClient();
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
