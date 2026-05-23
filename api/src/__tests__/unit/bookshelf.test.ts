@@ -49,7 +49,7 @@ describe('getBookshelves - token refresh', () => {
       .mockResolvedValueOnce(new Response(null, { status: 401 }))
       .mockResolvedValueOnce(new Response(JSON.stringify(MOCK_SHELVES_RESPONSE), { status: 200 }));
 
-    const { getBookshelves } = await import('../services/bookshelf.js');
+    const { getBookshelves } = await import('../../services/bookshelf.js');
     const shelves = await getBookshelves('session-id', redis as any);
 
     expect(refreshTokenGrant).toHaveBeenCalledOnce();
@@ -80,7 +80,7 @@ describe('getBookshelves - token refresh', () => {
       .mockResolvedValueOnce(new Response(null, { status: 401 }))
       .mockResolvedValueOnce(new Response(JSON.stringify(MOCK_SHELVES_RESPONSE), { status: 200 }));
 
-    const { getBookshelves } = await import('../services/bookshelf.js');
+    const { getBookshelves } = await import('../../services/bookshelf.js');
     await getBookshelves('session-id', redis as any);
 
     const saved = JSON.parse(vi.mocked(redis.setex).mock.calls[0][2]);
@@ -93,7 +93,7 @@ describe('removeFromShelf', () => {
     const redis = makeRedisMock();
     vi.mocked(fetch).mockResolvedValueOnce(new Response(null, { status: 200 }));
 
-    const { removeFromShelf } = await import('../services/bookshelf.js');
+    const { removeFromShelf } = await import('../../services/bookshelf.js');
     await removeFromShelf('session-id', 2, 'vol123', redis as any);
 
     expect(fetch).toHaveBeenCalledWith(
@@ -106,7 +106,7 @@ describe('removeFromShelf', () => {
     const redis = makeRedisMock();
     vi.mocked(fetch).mockResolvedValueOnce(new Response(null, { status: 400 }));
 
-    const { removeFromShelf } = await import('../services/bookshelf.js');
+    const { removeFromShelf } = await import('../../services/bookshelf.js');
     await expect(removeFromShelf('session-id', 2, 'vol123', redis as any)).rejects.toThrow(
       'Google Bookshelf API error: 400'
     );

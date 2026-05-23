@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
-import { buildApp } from '../app.js';
+import { buildApp } from '../../app.js';
 
-vi.mock('../plugins/redis.js', async () => {
+vi.mock('../../plugins/redis.js', async () => {
   const { default: fp } = await import('fastify-plugin');
   return {
     default: fp(async (fastify: any) => {

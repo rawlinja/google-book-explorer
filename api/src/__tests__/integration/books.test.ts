@@ -1,15 +1,15 @@
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
-import { buildApp } from '../app.js';
+import { buildApp } from '../../app.js';
 
-vi.mock('../hooks/requireAuth.js', () => ({
+vi.mock('../../hooks/requireAuth.js', () => ({
   requireAuth: vi.fn().mockResolvedValue(undefined),
 }));
 
-vi.mock('../services/bookSearch.js', () => ({
+vi.mock('../../services/bookSearch.js', () => ({
   searchBooks: vi.fn().mockResolvedValue({ items: [], totalItems: 0 }),
 }));
 
-vi.mock('../plugins/redis.js', async () => {
+vi.mock('../../plugins/redis.js', async () => {
   const { default: fp } = await import('fastify-plugin');
   return {
     default: fp(async (fastify: any) => {
@@ -47,7 +47,7 @@ describe('GET /api/books/search', () => {
   });
 
   it('returns books and totalItems', async () => {
-    const { searchBooks } = await import('../services/bookSearch.js');
+    const { searchBooks } = await import('../../services/bookSearch.js');
     vi.mocked(searchBooks).mockResolvedValueOnce(MOCK_BOOKS);
 
     const res = await app.inject({ method: 'GET', url: '/api/books/search?q=clean+code' });
@@ -58,7 +58,7 @@ describe('GET /api/books/search', () => {
   });
 
   it('passes startIndex 10 for page 2', async () => {
-    const { searchBooks } = await import('../services/bookSearch.js');
+    const { searchBooks } = await import('../../services/bookSearch.js');
     const mock = vi.mocked(searchBooks);
     mock.mockResolvedValueOnce(MOCK_BOOKS);
 

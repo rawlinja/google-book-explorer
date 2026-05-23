@@ -1,17 +1,17 @@
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
-import { buildApp } from '../app.js';
+import { buildApp } from '../../app.js';
 
-vi.mock('../hooks/requireAuth.js', () => ({
+vi.mock('../../hooks/requireAuth.js', () => ({
   requireAuth: vi.fn().mockResolvedValue(undefined),
 }));
 
-vi.mock('../services/bookshelf.js', () => ({
+vi.mock('../../services/bookshelf.js', () => ({
   getBookshelves: vi.fn(),
   addToShelf: vi.fn(),
   removeFromShelf: vi.fn(),
 }));
 
-vi.mock('../plugins/redis.js', async () => {
+vi.mock('../../plugins/redis.js', async () => {
   const { default: fp } = await import('fastify-plugin');
   return {
     default: fp(async (fastify: any) => {
@@ -44,7 +44,7 @@ afterAll(() => app.close());
 
 describe('GET /api/bookshelves', () => {
   it('returns shelf list', async () => {
-    const { getBookshelves } = await import('../services/bookshelf.js');
+    const { getBookshelves } = await import('../../services/bookshelf.js');
     vi.mocked(getBookshelves).mockResolvedValueOnce(MOCK_SHELVES);
 
     const res = await app.inject({ method: 'GET', url: '/api/bookshelves' });
@@ -53,7 +53,7 @@ describe('GET /api/bookshelves', () => {
   });
 
   it('returns 502 when the bookshelf service throws', async () => {
-    const { getBookshelves } = await import('../services/bookshelf.js');
+    const { getBookshelves } = await import('../../services/bookshelf.js');
     vi.mocked(getBookshelves).mockRejectedValueOnce(new Error('Google API error: 500'));
 
     const res = await app.inject({ method: 'GET', url: '/api/bookshelves' });
@@ -63,7 +63,7 @@ describe('GET /api/bookshelves', () => {
 
 describe('POST /api/bookshelves/:shelfId/add', () => {
   it('returns { ok: true } on success', async () => {
-    const { addToShelf } = await import('../services/bookshelf.js');
+    const { addToShelf } = await import('../../services/bookshelf.js');
     vi.mocked(addToShelf).mockResolvedValueOnce(undefined);
 
     const res = await app.inject({
@@ -75,7 +75,7 @@ describe('POST /api/bookshelves/:shelfId/add', () => {
   });
 
   it('calls addToShelf with the correct shelfId and volumeId', async () => {
-    const { addToShelf } = await import('../services/bookshelf.js');
+    const { addToShelf } = await import('../../services/bookshelf.js');
     const mock = vi.mocked(addToShelf);
     mock.mockResolvedValueOnce(undefined);
 
@@ -94,7 +94,7 @@ describe('POST /api/bookshelves/:shelfId/add', () => {
   });
 
   it('returns 502 when the bookshelf service throws', async () => {
-    const { addToShelf } = await import('../services/bookshelf.js');
+    const { addToShelf } = await import('../../services/bookshelf.js');
     vi.mocked(addToShelf).mockRejectedValueOnce(new Error('Google API error: 503'));
 
     const res = await app.inject({
@@ -107,7 +107,7 @@ describe('POST /api/bookshelves/:shelfId/add', () => {
 
 describe('POST /api/bookshelves/:shelfId/remove', () => {
   it('returns { ok: true } on success', async () => {
-    const { removeFromShelf } = await import('../services/bookshelf.js');
+    const { removeFromShelf } = await import('../../services/bookshelf.js');
     vi.mocked(removeFromShelf).mockResolvedValueOnce(undefined);
 
     const res = await app.inject({
@@ -119,7 +119,7 @@ describe('POST /api/bookshelves/:shelfId/remove', () => {
   });
 
   it('calls removeFromShelf with the correct shelfId and volumeId', async () => {
-    const { removeFromShelf } = await import('../services/bookshelf.js');
+    const { removeFromShelf } = await import('../../services/bookshelf.js');
     const mock = vi.mocked(removeFromShelf);
     mock.mockResolvedValueOnce(undefined);
 
@@ -141,7 +141,7 @@ describe('POST /api/bookshelves/:shelfId/remove', () => {
   });
 
   it('returns 502 when the bookshelf service throws', async () => {
-    const { removeFromShelf } = await import('../services/bookshelf.js');
+    const { removeFromShelf } = await import('../../services/bookshelf.js');
     vi.mocked(removeFromShelf).mockRejectedValueOnce(new Error('Google API error: 503'));
 
     const res = await app.inject({
