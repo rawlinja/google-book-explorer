@@ -68,6 +68,32 @@ describe('getBookshelves - read-only shelf filtering', () => {
   });
 });
 
+describe('getBookshelves - token refresh failures', () => {
+  it('throws when refreshTokenGrant itself fails', async () => {
+    const redis = makeRedisMock();
+    const { refreshTokenGrant } = await import('openid-client');
+    vi.mocked(refreshTokenGrant).mockRejectedValueOnce(new Error('invalid_grant'));
+
+    vi.mocked(fetch).mockResolvedValueOnce(new Response(null, { status: 401 }));
+
+    const { getBookshelves } = await import('../../services/bookshelf.js');
+    await expect(getBookshelves('session-id', redis as any)).rejects.toThrow('invalid_grant');
+  });
+
+  it('throws when the retried request after refresh also returns 401', async () => {
+    const redis = makeRedisMock();
+    const { refreshTokenGrant } = await import('openid-client');
+    vi.mocked(refreshTokenGrant).mockResolvedValueOnce(REFRESHED_TOKENS as any);
+
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(new Response(null, { status: 401 }))
+      .mockResolvedValueOnce(new Response(null, { status: 401 }));
+
+    const { getBookshelves } = await import('../../services/bookshelf.js');
+    await expect(getBookshelves('session-id', redis as any)).rejects.toThrow('Google Bookshelf API error: 401');
+  });
+});
+
 describe('getBookshelves - token refresh', () => {
   it('refreshes token on 401 and retries the request', async () => {
     const redis = makeRedisMock();
