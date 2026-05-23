@@ -14,10 +14,6 @@ cleanup() {
 }
 trap 'cleanup; exit 0' INT TERM
 
-echo "Building frontend..."
-pnpm --dir frontend build
-
-echo ""
 docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --remove-orphans
 
 echo ""
