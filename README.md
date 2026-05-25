@@ -1,6 +1,6 @@
 # Google Book Explorer
 
-A full-stack book search application with Google Books integration and an AI-powered search layer. Search by title, author, or ISBN — GPT-4.1 figures out which filter to use so you don't have to. Add books directly to your Google library collections from the results.
+A full-stack book search application with Google Books integration and an LLM-powered search layer. Search by title, author, or ISBN. GPT-4.1 figures out which filter to use. Add books directly to your Google library collections from the results.
 
 ![Demo](docs/demo.gif)
 
@@ -17,11 +17,11 @@ nginx is the single entry point. It serves the pre-built React frontend and prox
 
 ## How it works
 
-**Smart search.** User queries go through GPT-4.1, which picks the right Google Books search filter — by title, author, or ISBN — before hitting the API. This produces much better results than sending raw queries directly.
+**Smart search.** User queries go through GPT-4.1, which picks the right Google Books search filter — by title, author, or ISBN — before hitting the API.
 
-**Auth.** Login goes through Google OAuth with PKCE. The session and Google tokens are stored server-side in Redis, so nothing sensitive ever reaches the browser. Logout wipes both.
+**Auth.** Login goes through Google OAuth with PKCE. The session and Google tokens are stored server-side in Redis.
 
-**Collections.** Books can be added to or moved between your Google library collections (Favorites, To Read, Reading Now, Have Read). The app tracks which collection each book belongs to locally so it doesn't need to re-fetch from Google on every interaction.
+**Collections.** Books can be added to or moved between your Google library collections (Favorites, To Read, Reading Now, Have Read). The app tracks which collection each book belongs to locally.
 
 **Pagination.** Results are paginated; the frontend renders page controls based on the total count returned by the Google Books API.
 
@@ -47,16 +47,18 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ## Environment variables
 
-| Variable | Description |
-|----------|-------------|
-| `GOOGLE_CLIENT_ID` | Google OAuth client ID |
-| `GOOGLE_CLIENT_SECRET` | Google OAuth client secret |
-| `GOOGLE_REDIRECT_URI` | OAuth callback — `http://localhost:3000/auth/google/callback` |
-| `CORS_ORIGIN` | Allowed frontend origin — `http://localhost:3000` |
-| `SESSION_SECRET` | Session encryption secret (32+ chars) |
-| `REDIS_URL` | Redis connection string — `redis://redis:6379` |
-| `OPENAI_API_KEY` | OpenAI API key |
-| `GOOGLE_BOOKS_API_KEY` | Google Books API key |
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `GOOGLE_CLIENT_ID` | — | Google OAuth client ID |
+| `GOOGLE_CLIENT_SECRET` | — | Google OAuth client secret |
+| `GOOGLE_REDIRECT_URI` | — | OAuth callback URL — `http://localhost:3000/auth/google/callback` |
+| `OPENAI_API_KEY` | — | OpenAI API key |
+| `GOOGLE_BOOKS_API_KEY` | — | Google Books API key |
+| `SESSION_SECRET` | — | Session encryption secret (32+ chars) |
+| `REDIS_URL` | `redis://redis:6379` | Redis connection string |
+| `CORS_ORIGIN` | `http://localhost:3000` | Allowed frontend origin |
+| `NODE_ENV` | `development` | `development`, `production`, or `test` |
+| `PORT` | `3001` | API server port |
 
 ## Project structure
 
