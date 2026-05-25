@@ -9,20 +9,6 @@ dist/
 .env.local
 .env.*.local
 
-# Yarn PnP (root and subdirectories)
-.pnp.*
-**/.pnp.*
-.yarn/*
-!.yarn/patches
-!.yarn/plugins
-!.yarn/releases
-!.yarn/sdks
-**/.yarn/*
-!**/.yarn/patches
-!**/.yarn/plugins
-!**/.yarn/releases
-!**/.yarn/sdks
-
 # IDE & tools
 .vscode/
 .claude/
