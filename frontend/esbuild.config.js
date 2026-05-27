@@ -2,7 +2,7 @@ export const baseConfig = {
   entryPoints: ['src/main.tsx'],
   bundle: true,
   platform: 'browser',
-  target: 'es2020',
+  target: 'es2024',
   format: 'esm',
   outdir: 'dist',
   entryNames: 'index',
