@@ -1,5 +1,5 @@
-FROM node:lts-alpine AS builder
-RUN npm install -g pnpm
+FROM node:24-alpine AS builder
+RUN npm install -g pnpm@11.0.9
 WORKDIR /app
 ENV CI=true
 COPY frontend/package.json frontend/pnpm-lock.yaml frontend/pnpm-workspace.yaml ./
