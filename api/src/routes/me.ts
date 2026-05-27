@@ -1,4 +1,4 @@
-import { FastifyInstance } from 'fastify';
+import type { FastifyInstance } from 'fastify';
 
 export default async function meRoutes(fastify: FastifyInstance) {
   fastify.get('/api/me', async (req, reply) => {

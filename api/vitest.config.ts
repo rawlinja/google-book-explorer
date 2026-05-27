@@ -19,7 +19,7 @@ export default defineConfig({
     },
   },
   esbuild: {
-    target: 'es2022',
+    target: 'es2024',
     format: 'esm',
   },
 });

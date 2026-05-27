@@ -48,11 +48,11 @@ async function runTool(
 ): Promise<GoogleBooksResult> {
   switch (name) {
     case 'get_books_by_title':
-      return searchByTitle(args.title, startIndex);
+      return searchByTitle(args.title ?? '', startIndex);
     case 'get_books_by_author':
-      return searchByAuthor(args.author, startIndex);
+      return searchByAuthor(args.author ?? '', startIndex);
     case 'get_books_by_isbn':
-      return searchByIsbn(args.isbn, startIndex);
+      return searchByIsbn(args.isbn ?? '', startIndex);
     default:
       throw new Error(`Unknown tool: ${name}`);
   }

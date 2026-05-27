@@ -1,4 +1,4 @@
-import { FastifyInstance } from 'fastify';
+import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { requireAuth } from '../hooks/requireAuth.js';
 import { searchBooks } from '../services/bookSearch.js';

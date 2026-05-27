@@ -1,7 +1,11 @@
 import type { Redis } from 'ioredis';
 
 export class RedisSessionStore {
-  constructor(private redis: Redis) {}
+  private redis: Redis;
+
+  constructor(redis: Redis) {
+    this.redis = redis;
+  }
 
   get(sid: string, cb: (err: any, session?: any) => void) {
     this.redis

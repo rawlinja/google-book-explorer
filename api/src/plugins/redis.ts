@@ -1,5 +1,5 @@
 import fp from 'fastify-plugin';
-import { FastifyInstance } from 'fastify';
+import type { FastifyInstance } from 'fastify';
 import { Redis } from 'ioredis';
 import { config } from '../config/index.js';
 

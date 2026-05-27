@@ -17,7 +17,7 @@
  * Docs: https://developers.google.com/identity/protocols/oauth2/pkce
  * openid-client: https://github.com/panva/openid-client
  */
-import { FastifyInstance } from 'fastify';
+import type { FastifyInstance } from 'fastify';
 import * as openidClient from 'openid-client';
 import { config } from '../config/index.js';
 import { oidcConfig } from '../lib/oidc.js';
@@ -59,9 +59,15 @@ export default async function authRoutes(fastify: FastifyInstance) {
       const qs = req.url.slice(req.url.indexOf('?'));
       const currentUrl = new URL(`${config.GOOGLE_REDIRECT_URI}${qs}`);
 
+      const { codeVerifier, state } = req.session;
+      if (!codeVerifier || !state) {
+        req.log.warn('auth.callback.missing_session_state');
+        return reply.redirect('/authorize');
+      }
+
       const tokens = await openidClient.authorizationCodeGrant(oidcConfig, currentUrl, {
-        pkceCodeVerifier: req.session.codeVerifier,
-        expectedState: req.session.state,
+        pkceCodeVerifier: codeVerifier,
+        expectedState: state,
       });
       req.log.info('auth.callback.tokens_exchanged');
 
