@@ -63,11 +63,7 @@ describe('refreshAndSave', () => {
 
     expect(updated.accessToken).toBe('access-token-new');
     expect(updated.refreshToken).toBe('refresh-token-new');
-    expect(redis.setex).toHaveBeenCalledWith(
-      'tokens:session-id',
-      3600,
-      JSON.stringify(updated)
-    );
+    expect(redis.setex).toHaveBeenCalledWith('tokens:session-id', 3600, JSON.stringify(updated));
   });
 
   it('retains the original refresh token if the server does not rotate it', async () => {

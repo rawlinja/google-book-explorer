@@ -8,7 +8,11 @@ export function createOpenAIProvider(model?: string): LLMProvider {
   const resolvedModel = model ?? DEFAULT_MODEL;
 
   return {
-    async selectTool(query: string, tools: LLMTool[], systemPrompt: string): Promise<ToolCall | null> {
+    async selectTool(
+      query: string,
+      tools: LLMTool[],
+      systemPrompt: string
+    ): Promise<ToolCall | null> {
       const openaiTools: OpenAI.Responses.Tool[] = tools.map((t) => ({
         type: 'function',
         name: t.name,
