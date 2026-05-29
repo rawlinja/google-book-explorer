@@ -66,3 +66,21 @@ export async function searchByAuthor(
 export async function searchByIsbn(isbn: string, startIndex: number): Promise<GoogleBooksResult> {
   return search(`isbn:${isbn}`, startIndex);
 }
+
+export async function searchBySubject(
+  subject: string,
+  startIndex: number
+): Promise<GoogleBooksResult> {
+  return search(`subject:${subject}`, startIndex);
+}
+
+export async function searchByPublisher(
+  publisher: string,
+  startIndex: number
+): Promise<GoogleBooksResult> {
+  return search(`inpublisher:${publisher}`, startIndex);
+}
+
+export async function searchByLccn(lccn: string, startIndex: number): Promise<GoogleBooksResult> {
+  return search(`lccn:${lccn}`, startIndex);
+}
