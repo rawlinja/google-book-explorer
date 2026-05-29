@@ -2,7 +2,7 @@
 
 ## Overview
 
-Google Book Explorer is a full-stack book search application with an AI-powered query layer. Users authenticate via Google OAuth, then search for books.  GPT-4.1 decides which Google Books filter to apply based on the query.
+Google Book Explorer is a full-stack book search application with an LLM powered query layer. Users authenticate via Google OAuth, then search for books.  GPT-4.1 decides which Google Books filter to apply based on the query.
 
 ```mermaid
 flowchart TD
@@ -28,7 +28,7 @@ All `/api`, `/auth`, and `/health` requests are proxied through to Fastify.
 
 ### Frontend
 
-React 19 with esbuild and pnpm. State is split between Zustand (session, collections) and TanStack Query (book search results). Collection state is tracked locally so moving a book between shelves doesn't require a round-trip to check its current location.
+React 19 with esbuild and pnpm. State is split between Zustand (session, collections) and TanStack Query (book search results).
 
 Routes:
 
@@ -41,7 +41,7 @@ Routes:
 
 ### API
 
-Fastify 5 with TypeScript and pnpm. Configuration is validated with Zod at startup — the process exits immediately if any required environment variable is missing.
+Fastify 5 with TypeScript and pnpm. Configuration is validated with Zod at startup; the process exits if any required environment variable is missing.
 
 Auth uses Google OAuth with PKCE via `openid-client`. Sessions are stored in Redis (no JWT).
 
@@ -69,7 +69,6 @@ Routes:
 1. The frontend sends a search query to `/api/books/search`.
 2. The API passes the query to GPT-4.1, which selects the right search type: by title, author, or ISBN.
 3. The API calls the Google Books API with the appropriate filter and returns paginated results.
-4. The frontend uses the total count from Google to render page controls.
 
 ## Source References
 
