@@ -1,30 +1,49 @@
-import OpenAI from 'openai';
+import { config } from '../config/index.js';
 
-const client = new OpenAI();
+export interface LLMTool {
+  name: string;
+  description: string;
+  parameters: {
+    type: 'object';
+    properties: Record<string, { type: string }>;
+    required: string[];
+    additionalProperties: false;
+  };
+}
 
 export interface ToolCall {
   name: string;
   args: Record<string, string>;
 }
 
+export interface LLMProvider {
+  selectTool(query: string, tools: LLMTool[], systemPrompt: string): Promise<ToolCall | null>;
+}
+
+async function createProvider(): Promise<LLMProvider> {
+  const { LLM_PROVIDER, LLM_MODEL } = config;
+
+  if (LLM_PROVIDER === 'anthropic') {
+    const { createAnthropicProvider } = await import('./providers/anthropic.js');
+    return createAnthropicProvider(LLM_MODEL);
+  }
+
+  const { createOpenAIProvider } = await import('./providers/openai.js');
+  return createOpenAIProvider(LLM_MODEL);
+}
+
+let _provider: LLMProvider | null = null;
+
+async function getProvider(): Promise<LLMProvider> {
+  if (!_provider) _provider = await createProvider();
+  return _provider;
+}
+
 export async function selectTool(
   query: string,
-  tools: OpenAI.Responses.Tool[],
+  tools: LLMTool[],
   systemPrompt: string
 ): Promise<ToolCall | null> {
-  const response = await client.responses.create({
-    model: 'gpt-4.1',
-    input: [
-      { role: 'system', content: systemPrompt },
-      { role: 'user', content: query },
-    ],
-    tools,
-    tool_choice: 'required',
-  });
-
-  const call = (response.output ?? []).find((o) => o.type === 'function_call');
-  if (!call) return null;
-
-  const args = typeof call.arguments === 'string' ? JSON.parse(call.arguments) : call.arguments;
-  return { name: call.name, args };
+  const provider = await getProvider();
+  return provider.selectTool(query, tools, systemPrompt);
 }

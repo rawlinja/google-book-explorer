@@ -1,4 +1,4 @@
-import OpenAI from 'openai';
+import type { LLMTool } from '../lib/llm.js';
 
 export const SYSTEM_PROMPT = `You are a book search assistant. Always call exactly one tool.
 - Title → get_books_by_title ("The Shining", "find a book called...")
@@ -9,9 +9,8 @@ export const SYSTEM_PROMPT = `You are a book search assistant. Always call exact
 - LCCN → get_books_by_lccn (Library of Congress number)
 If the query is ambiguous (e.g. a person's name with no context), prefer author.`;
 
-export const TOOLS: OpenAI.Responses.Tool[] = [
+export const TOOLS: LLMTool[] = [
   {
-    type: 'function',
     name: 'get_books_by_title',
     description:
       'Search Google Books by title. Use when the query is clearly a book title. Do not use for author names.',
@@ -21,10 +20,8 @@ export const TOOLS: OpenAI.Responses.Tool[] = [
       required: ['title'],
       additionalProperties: false,
     },
-    strict: true,
   },
   {
-    type: 'function',
     name: 'get_books_by_author',
     description:
       'Search Google Books by author name. Use when the user names a person or asks for works by someone.',
@@ -34,10 +31,8 @@ export const TOOLS: OpenAI.Responses.Tool[] = [
       required: ['author'],
       additionalProperties: false,
     },
-    strict: true,
   },
   {
-    type: 'function',
     name: 'get_books_by_isbn',
     description:
       'Search Google Books by ISBN. Use when the query is or contains a numeric ISBN (10 or 13 digits, with or without hyphens).',
@@ -47,10 +42,8 @@ export const TOOLS: OpenAI.Responses.Tool[] = [
       required: ['isbn'],
       additionalProperties: false,
     },
-    strict: true,
   },
   {
-    type: 'function',
     name: 'get_books_by_subject',
     description:
       "Search Google Books by subject, genre, or theme. Use when the user asks for books about a topic — not a specific title or author. Examples: 'horror', 'machine learning', 'World War II'.",
@@ -60,10 +53,8 @@ export const TOOLS: OpenAI.Responses.Tool[] = [
       required: ['subject'],
       additionalProperties: false,
     },
-    strict: true,
   },
   {
-    type: 'function',
     name: 'get_books_by_publisher',
     description:
       'Search Google Books by publisher name. Use when the user asks for books from a specific publisher.',
@@ -73,10 +64,8 @@ export const TOOLS: OpenAI.Responses.Tool[] = [
       required: ['publisher'],
       additionalProperties: false,
     },
-    strict: true,
   },
   {
-    type: 'function',
     name: 'get_books_by_lccn',
     description:
       'Search Google Books by Library of Congress Control Number (LCCN). Use when the query contains an LCCN — a unique catalog identifier, distinct from an ISBN.',
@@ -86,6 +75,5 @@ export const TOOLS: OpenAI.Responses.Tool[] = [
       required: ['lccn'],
       additionalProperties: false,
     },
-    strict: true,
   },
 ];

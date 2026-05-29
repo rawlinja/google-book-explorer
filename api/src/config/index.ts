@@ -11,6 +11,9 @@ const schema = z.object({
   GOOGLE_REDIRECT_URI: z.string().min(1),
   OPENAI_API_KEY: z.string().min(1),
   GOOGLE_BOOKS_API_KEY: z.string().min(1),
+  LLM_PROVIDER: z.enum(['openai', 'anthropic']).default('openai'),
+  LLM_MODEL: z.string().optional(),
+  ANTHROPIC_API_KEY: z.string().optional(),
 });
 
 const result = schema.safeParse(process.env);
