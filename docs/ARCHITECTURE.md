@@ -2,7 +2,7 @@
 
 ## Overview
 
-Google Book Explorer is a full-stack book search application with an LLM powered query layer. Users authenticate via Google OAuth, then search for books.  GPT-4.1 decides which Google Books filter to apply based on the query.
+Google Book Explorer is a full-stack book search application with an LLM-powered query layer. Users authenticate via Google OAuth, then search for books. An LLM (OpenAI by default, Anthropic optional) decides which Google Books filter to apply — title, author, ISBN, subject, publisher, or LCCN.
 
 ```mermaid
 flowchart TD
@@ -14,7 +14,7 @@ flowchart TD
     Google -->|"callback"| NGX
     NGX -->|"proxy"| API
     API <-->|"sessions + tokens"| RD[("Redis :6379")]
-    API -->|"query routing"| OAI["OpenAI GPT-4.1"]
+    API -->|"query routing"| OAI["LLM\nOpenAI · Anthropic"]
     API -->|"book search"| GBooks["Google Books API"]
 ```
 
@@ -67,7 +67,7 @@ Routes:
 ## Book Search Flow
 
 1. The frontend sends a search query to `/api/books/search`.
-2. The API passes the query to GPT-4.1, which selects the right search type: by title, author, or ISBN.
+2. The API passes the query to the configured LLM (OpenAI `gpt-4.1` by default; swap via `LLM_PROVIDER` and `LLM_MODEL`), which selects the right search type: title, author, ISBN, subject, publisher, or LCCN.
 3. The API calls the Google Books API with the appropriate filter and returns paginated results.
 
 ## Source References
@@ -84,8 +84,14 @@ Routes:
 | `api/src/routes/auth.ts` | Google OAuth routes |
 | `api/src/routes/me.ts` | `/api/me` |
 | `api/src/routes/books.ts` | `/api/books/search` |
-| `api/src/services/bookSearch.ts` | OpenAI tool-use orchestration |
+| `api/src/lib/llm.ts` | LLM provider factory + shared interfaces |
+| `api/src/lib/providers/openai.ts` | OpenAI provider adapter |
+| `api/src/lib/providers/anthropic.ts` | Anthropic provider adapter |
+| `api/src/lib/googleAuth.ts` | Google token storage, refresh, and authorized fetch |
+| `api/src/services/bookSearch.ts` | LLM tool-use orchestration |
+| `api/src/services/bookSearch.tools.ts` | Tool definitions and system prompt |
 | `api/src/services/googleBooks.ts` | Google Books API client |
+| `api/src/services/bookshelf.ts` | Google library collections |
 | `frontend/src/store/index.ts` | Session state |
 | `frontend/src/store/books.ts` | Book search cache |
 | `frontend/src/store/collections.ts` | Collection state |

@@ -1,6 +1,6 @@
 # Google Book Explorer
 
-A full-stack book search application with Google Books integration and an LLM-powered search layer. Search by title, author, or ISBN. GPT-4.1 figures out which filter to use. Add books directly to your Google library collections from the results.
+A full-stack book search application with Google Books integration and an LLM-powered search layer. Search by title, author, ISBN, subject, publisher, or Library of Congress number. The LLM figures out which filter to use. Add books directly to your Google library collections from the results.
 
 ![Demo](docs/demo.gif)
 
@@ -17,7 +17,7 @@ nginx is the single entry point. It serves the pre-built React frontend and prox
 
 ## How it works
 
-**Smart search.** User queries go through GPT-4.1, which picks the right Google Books search filter — by title, author, or ISBN — before hitting the API.
+**Smart search.** User queries go through an LLM (OpenAI by default, Anthropic optional), which picks the right Google Books search filter — title, author, ISBN, subject, publisher, or LCCN — before hitting the API.
 
 **Auth.** Login goes through Google OAuth with PKCE. The session and Google tokens are stored server-side in Redis.
 
@@ -32,17 +32,17 @@ nginx is the single entry point. It serves the pre-built React frontend and prox
 ```bash
 git clone https://github.com/rawlinja/google-book-explorer.git
 cd google-book-explorer
-cp .env.example .env   # fill in your keys
-./scripts/prod.sh      # build and start everything
+cp .env.example .env      # fill in your keys
+./scripts/prod.sh up      # build and start everything
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+Open [http://localhost:3000](http://localhost:3000). To stop: `./scripts/prod.sh down`.
 
 **For development** (live reload on file changes):
 
 ```bash
 ./scripts/install.sh   # install dependencies
-./scripts/dev.sh       # start stack + watch for frontend changes (Ctrl+C stops everything)
+./scripts/dev.sh up    # start stack + watch for frontend changes (Ctrl+C stops everything)
 ```
 
 ## Environment variables
@@ -59,6 +59,9 @@ Open [http://localhost:3000](http://localhost:3000).
 | `CORS_ORIGIN` | `http://localhost:3000` | Allowed frontend origin |
 | `NODE_ENV` | `development` | `development`, `production`, or `test` |
 | `PORT` | `3001` | API server port |
+| `LLM_PROVIDER` | `openai` | LLM provider for query routing — `openai` or `anthropic` |
+| `LLM_MODEL` | *(provider default)* | Override the model used for routing |
+| `ANTHROPIC_API_KEY` | — | Required when `LLM_PROVIDER=anthropic` |
 
 ## Project structure
 
@@ -75,7 +78,8 @@ google-book-explorer/
 │       ├── plugins/
 │       ├── hooks/
 │       ├── routes/
-│       └── services/
+│       ├── services/
+│       └── lib/
 ├── nginx/             # nginx configs + Dockerfile
 ├── docker-compose.yml
 ├── docker-compose.dev.yml
@@ -84,7 +88,7 @@ google-book-explorer/
     ├── install.sh
     ├── dev.sh
     ├── prod.sh
-    ├── stop.sh
+    ├── eval.sh
     └── logs.sh
 ```
 
