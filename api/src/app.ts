@@ -16,7 +16,7 @@ import bookshelvesRoutes from './routes/bookshelves.js';
 export async function buildApp() {
   const fastify = Fastify({
     logger: { level: config.NODE_ENV === 'test' ? 'silent' : 'info' },
-    trustProxy: true,
+    trustProxy: 'loopback, linklocal, uniquelocal',
   });
 
   await fastify.register(helmet);
