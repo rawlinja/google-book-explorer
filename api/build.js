@@ -4,7 +4,7 @@ await esbuild.build({
   entryPoints: ['src/index.ts'],
   bundle: true,
   platform: 'node',
-  target: 'node24',
+  target: 'node26',
   format: 'esm',
   outdir: 'dist',
   outExtension: { '.js': '.js' },
