@@ -7,4 +7,4 @@ if [ ! -f .env ]; then
 fi
 
 echo "=== Routing Evals ==="
-pnpm --dir api eval
+(cd api && pnpm eval)

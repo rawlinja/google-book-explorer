@@ -2,15 +2,15 @@
 set -e
 
 echo "Typechecking api..."
-pnpm --dir api typecheck
+(cd api && pnpm typecheck)
 
 echo "Building api..."
-pnpm --dir api build
+(cd api && pnpm build)
 
 echo "Typechecking frontend..."
-pnpm --dir frontend typecheck
+(cd frontend && pnpm typecheck)
 
 echo "Building frontend..."
-pnpm --dir frontend build
+(cd frontend && pnpm build)
 
 echo "Done."

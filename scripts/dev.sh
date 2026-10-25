@@ -48,7 +48,7 @@ cmd_up() {
   }
   trap 'cleanup; exit 0' INT TERM
 
-  pnpm --dir "$ROOT_DIR/frontend" watch
+  cd "$ROOT_DIR/frontend" && pnpm watch
 }
 
 cmd_down() {

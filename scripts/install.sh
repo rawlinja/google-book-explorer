@@ -2,9 +2,9 @@
 set -e
 
 echo "Installing frontend dependencies..."
-pnpm install --dir frontend
+(cd frontend && pnpm install)
 
 echo "Installing api dependencies..."
-pnpm install --dir api
+(cd api && pnpm install)
 
 echo "Done."
