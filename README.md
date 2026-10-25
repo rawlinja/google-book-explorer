@@ -88,6 +88,9 @@ google-book-explorer/
     ├── install.sh
     ├── dev.sh
     ├── prod.sh
+    ├── stop.sh
+    ├── build.sh
+    ├── test.sh
     ├── eval.sh
     └── logs.sh
 ```
