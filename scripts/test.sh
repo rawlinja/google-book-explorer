@@ -3,24 +3,24 @@ set -e
 
 echo "=== API ==="
 echo "-- typecheck"
-pnpm --dir api typecheck
+(cd api && pnpm typecheck)
 
 echo "-- format"
-pnpm --dir api format
+(cd api && pnpm format:check)
 
 echo "-- tests"
-pnpm --dir api test
+(cd api && pnpm test)
 
 echo ""
 echo "=== Frontend ==="
 echo "-- typecheck"
-pnpm --dir frontend typecheck
+(cd frontend && pnpm typecheck)
 
 echo "-- lint"
-pnpm --dir frontend lint
+(cd frontend && pnpm lint)
 
 echo "-- tests"
-pnpm --dir frontend test
+(cd frontend && pnpm test)
 
 echo ""
 echo "All checks passed."
