@@ -1,5 +1,5 @@
 FROM node:26-alpine AS builder
-RUN npm install -g pnpm@11.28.2
+RUN npm install -g pnpm@11.28.6
 WORKDIR /app
 ENV CI=true
 COPY frontend/package.json frontend/pnpm-lock.yaml frontend/pnpm-workspace.yaml ./
