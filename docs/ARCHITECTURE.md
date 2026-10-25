@@ -55,6 +55,9 @@ Routes:
 | POST | `/auth/logout` | — | Clear tokens and destroy session |
 | GET | `/api/me` | session | Current user + session expiry |
 | GET | `/api/books/search?q=&page=` | session | AI-routed book search |
+| GET | `/api/bookshelves` | session | List the user's Google library collections |
+| POST | `/api/bookshelves/:shelfId/add` | session | Add a book to a collection |
+| POST | `/api/bookshelves/:shelfId/remove` | session | Remove a book from a collection |
 
 ## Auth Flow
 
@@ -84,6 +87,8 @@ Routes:
 | `api/src/routes/auth.ts` | Google OAuth routes |
 | `api/src/routes/me.ts` | `/api/me` |
 | `api/src/routes/books.ts` | `/api/books/search` |
+| `api/src/routes/bookshelves.ts` | `/api/bookshelves` routes |
+| `api/src/store/redisSessionStore.ts` | Redis-backed session store |
 | `api/src/lib/llm.ts` | LLM provider factory + shared interfaces |
 | `api/src/lib/providers/openai.ts` | OpenAI provider adapter |
 | `api/src/lib/providers/anthropic.ts` | Anthropic provider adapter |
@@ -92,6 +97,7 @@ Routes:
 | `api/src/services/bookSearch.tools.ts` | Tool definitions and system prompt |
 | `api/src/services/googleBooks.ts` | Google Books API client |
 | `api/src/services/bookshelf.ts` | Google library collections |
+| `api/src/__evals__/routing.eval.ts` | LLM routing accuracy evals (90% threshold) |
 | `frontend/src/store/index.ts` | Session state |
 | `frontend/src/store/books.ts` | Book search cache |
 | `frontend/src/store/collections.ts` | Collection state |
