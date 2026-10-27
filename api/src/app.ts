@@ -7,6 +7,7 @@ import rateLimit from '@fastify/rate-limit';
 import redisPlugin from './plugins/redis.js';
 import { RedisSessionStore } from './store/redisSessionStore.js';
 import { config } from './config/index.js';
+import { loggerOptions } from './lib/logger.js';
 import authRoutes from './routes/auth.js';
 import healthRoutes from './routes/health.js';
 import meRoutes from './routes/me.js';
@@ -15,7 +16,7 @@ import bookshelvesRoutes from './routes/bookshelves.js';
 
 export async function buildApp() {
   const fastify = Fastify({
-    logger: { level: config.NODE_ENV === 'test' ? 'silent' : 'info' },
+    logger: loggerOptions(config.NODE_ENV),
     trustProxy: 'loopback, linklocal, uniquelocal',
   });
 

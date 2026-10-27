@@ -95,7 +95,7 @@ Routes:
 | `api/src/lib/googleAuth.ts` | Google token storage, refresh, and authorized fetch |
 | `api/src/services/bookSearch.ts` | LLM tool-use orchestration |
 | `api/src/services/bookSearch.tools.ts` | Tool definitions and system prompt |
-| `api/src/services/googleBooks.ts` | Google Books API client |
+| `api/src/services/googleBooks.ts` | Google Books search via `@googleapis/books` |
 | `api/src/services/bookshelf.ts` | Google library collections |
 | `api/src/__evals__/routing.eval.ts` | LLM routing accuracy evals (90% threshold) |
 | `frontend/src/store/index.ts` | Session state |
