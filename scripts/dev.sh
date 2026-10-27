@@ -3,7 +3,6 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 WATCH_PORT=3005
-WATCH_LOG_FILE="$ROOT_DIR/scripts/logs/frontend-watch.log"
 
 usage() {
   cat <<'EOF'
@@ -42,12 +41,11 @@ start_watch() {
     return
   fi
 
-  # Job control gives the watch its own process group, so down can stop pnpm and its node child together.
-  mkdir -p "$(dirname "$WATCH_LOG_FILE")"
+  # Own process group (job control) so down stops pnpm and its node child together; output stays on this terminal.
   set -m
-  (cd "$ROOT_DIR/frontend" && exec pnpm watch) >"$WATCH_LOG_FILE" 2>&1 &
+  (cd "$ROOT_DIR/frontend" && exec pnpm watch) &
   set +m
-  echo "Frontend watch started (PID $!, log: scripts/logs/frontend-watch.log)"
+  echo "Frontend watch started (PID $!)"
 }
 
 stop_watch() {
@@ -82,7 +80,7 @@ show_status() {
 
   local pid
   if pid=$(watch_pid); then
-    echo "Frontend watch: running (PID $pid, log: scripts/logs/frontend-watch.log)"
+    echo "Frontend watch: running (PID $pid)"
   else
     echo "Frontend watch: stopped"
   fi
