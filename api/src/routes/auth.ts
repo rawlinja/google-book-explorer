@@ -19,6 +19,7 @@ import { z } from 'zod';
 import { createOAuthClient } from '../lib/googleOAuth.js';
 import { saveTokens } from '../lib/googleAuth.js';
 import { redis } from '../lib/redis.js';
+import { SESSION_TTL_SECONDS } from '../lib/session.js';
 
 declare module '@fastify/session' {
   interface FastifySessionObject {
@@ -29,7 +30,6 @@ declare module '@fastify/session' {
   }
 }
 
-const TOKEN_TTL = 3600;
 const SCOPES = ['openid', 'email', 'profile', 'https://www.googleapis.com/auth/books'];
 
 const callbackQuerySchema = z.object({
@@ -93,12 +93,12 @@ export default async function authRoutes(fastify: FastifyInstance) {
           refresh_token: tokens.refresh_token ?? null,
           expiry_date: tokens.expiry_date ?? null,
         },
-        TOKEN_TTL
+        SESSION_TTL_SECONDS
       );
       req.log.info('auth.callback.tokens_stored');
 
       req.session.authenticated = true;
-      req.session.expiresAt = Date.now() + TOKEN_TTL * 1000;
+      req.session.expiresAt = Date.now() + SESSION_TTL_SECONDS * 1000;
 
       return reply.redirect('/auth-signed-in');
     } catch (err) {

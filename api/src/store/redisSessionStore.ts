@@ -1,4 +1,5 @@
 import type { Redis } from 'ioredis';
+import { SESSION_TTL_SECONDS } from '../lib/session.js';
 
 export class RedisSessionStore {
   private redis: Redis;
@@ -15,7 +16,9 @@ export class RedisSessionStore {
   }
 
   set(sid: string, session: any, cb: (err?: any) => void) {
-    const ttl = session?.cookie?.maxAge ? Math.floor(session.cookie.maxAge / 1000) : 3600;
+    const ttl = session?.cookie?.maxAge
+      ? Math.floor(session.cookie.maxAge / 1000)
+      : SESSION_TTL_SECONDS;
     this.redis
       .setex(`sess:${sid}`, ttl, JSON.stringify(session))
       .then(() => cb())
