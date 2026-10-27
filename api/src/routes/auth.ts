@@ -21,6 +21,7 @@ import type { FastifyInstance } from 'fastify';
 import * as openidClient from 'openid-client';
 import { config } from '../config/index.js';
 import { oidcConfig } from '../lib/oidc.js';
+import { redis } from '../lib/redis.js';
 
 declare module '@fastify/session' {
   interface FastifySessionObject {
@@ -74,7 +75,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
       delete req.session.codeVerifier;
       delete req.session.state;
 
-      await fastify.redis.setex(
+      await redis.setex(
         `tokens:${req.session.sessionId}`,
         TOKEN_TTL,
         JSON.stringify({
@@ -96,7 +97,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
   });
 
   fastify.post('/auth/logout', async (req, reply) => {
-    await fastify.redis.del(`tokens:${req.session.sessionId}`);
+    await redis.del(`tokens:${req.session.sessionId}`);
     await req.session.destroy();
     reply.clearCookie('sessionId', { path: '/' });
     req.log.info('auth.logout.completed');
