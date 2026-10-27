@@ -14,7 +14,7 @@
  */
 import { randomBytes } from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
-import { CodeChallengeMethod } from 'google-auth-library';
+import { CodeChallengeMethod, type Credentials } from 'google-auth-library';
 import { z } from 'zod';
 import { createOAuthClient } from '../lib/googleOAuth.js';
 import { saveTokens } from '../lib/googleAuth.js';
@@ -28,6 +28,15 @@ declare module '@fastify/session' {
     authenticated?: boolean;
     expiresAt?: number;
   }
+}
+
+const FALLBACK_ACCESS_TOKEN_TTL = 3600;
+
+// Without a refresh token the session can't outlive the access token.
+function tokenTtlSeconds(tokens: Credentials): number {
+  if (tokens.refresh_token) return SESSION_TTL_SECONDS;
+  if (!tokens.expiry_date) return FALLBACK_ACCESS_TOKEN_TTL;
+  return Math.max(1, Math.floor((tokens.expiry_date - Date.now()) / 1000));
 }
 
 const SCOPES = ['openid', 'email', 'profile', 'https://www.googleapis.com/auth/books'];
@@ -49,6 +58,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
     req.log.info('auth.login.started');
 
     const url = client.generateAuthUrl({
+      access_type: 'offline',
       scope: SCOPES,
       code_challenge: codeChallenge,
       code_challenge_method: CodeChallengeMethod.S256,
@@ -81,6 +91,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
         codeVerifier,
       });
       if (!tokens.access_token) throw new Error('Token response has no access token');
+      const ttlSeconds = tokenTtlSeconds(tokens);
       req.log.info('auth.callback.tokens_exchanged');
 
       delete req.session.codeVerifier;
@@ -93,12 +104,12 @@ export default async function authRoutes(fastify: FastifyInstance) {
           refresh_token: tokens.refresh_token ?? null,
           expiry_date: tokens.expiry_date ?? null,
         },
-        SESSION_TTL_SECONDS
+        ttlSeconds
       );
       req.log.info('auth.callback.tokens_stored');
 
       req.session.authenticated = true;
-      req.session.expiresAt = Date.now() + SESSION_TTL_SECONDS * 1000;
+      req.session.expiresAt = Date.now() + ttlSeconds * 1000;
 
       return reply.redirect('/auth-signed-in');
     } catch (err) {
