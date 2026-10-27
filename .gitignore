@@ -19,6 +19,3 @@ dist/
 .npmrc
 dump.rdb
 
-# Scripts runtime files
-scripts/logs/
-scripts/pids/

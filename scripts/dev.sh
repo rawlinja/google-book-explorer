@@ -2,14 +2,17 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+WATCH_PORT=3005
 
 usage() {
   cat <<'EOF'
 Usage: bash scripts/dev.sh <command>
 
 Commands:
-  up [--build]  Start containers and esbuild watch; pass --build to rebuild images first
-  down          Stop containers and esbuild watch server
+  up [--build]  Start containers and the frontend watch in the background; --build rebuilds images first
+  down          Stop the frontend watch and containers
+  status        Show health checks, frontend watch state, and container status
+  logs [svc]    Follow container logs, optionally for one service (api, nginx, redis)
 EOF
 }
 
@@ -24,6 +27,68 @@ dc() {
   docker compose -f "$ROOT_DIR/docker-compose.yml" -f "$ROOT_DIR/docker-compose.dev.yml" "$@"
 }
 
+watch_pid() {
+  local pid
+  pid=$(lsof -ti:"$WATCH_PORT" -sTCP:LISTEN 2>/dev/null | head -1) || true
+  [[ -n "$pid" ]] || return 1
+  echo "$pid"
+}
+
+start_watch() {
+  local pid
+  if pid=$(watch_pid); then
+    echo "Frontend watch already running (PID $pid)"
+    return
+  fi
+
+  # Own process group (job control) so down stops pnpm and its node child together; output stays on this terminal.
+  set -m
+  (cd "$ROOT_DIR/frontend" && exec pnpm watch) &
+  set +m
+  echo "Frontend watch started (PID $!)"
+}
+
+stop_watch() {
+  local pid pgid
+  pid=$(watch_pid) || return 0
+  pgid=$(ps -o pgid= -p "$pid" | tr -d ' ')
+
+  # Never signal our own group: a watch started from this shell would take dev.sh down with it.
+  if [[ -n "$pgid" && "$pgid" != "$(ps -o pgid= -p $$ | tr -d ' ')" ]]; then
+    kill -- "-$pgid" 2>/dev/null || true
+  else
+    kill "$pid" 2>/dev/null || true
+  fi
+  echo "Frontend watch stopped (PID $pid)"
+}
+
+health_check() {
+  local name="$1"
+  local url="$2"
+  if curl -fsS --max-time 2 "$url" >/dev/null 2>&1; then
+    echo "OK   $name ($url)"
+  else
+    echo "FAIL $name ($url)"
+  fi
+}
+
+show_status() {
+  echo "Health"
+  health_check "nginx" "http://localhost:3000"
+  health_check "api" "http://localhost:3000/health"
+  echo ""
+
+  local pid
+  if pid=$(watch_pid); then
+    echo "Frontend watch: running (PID $pid)"
+  else
+    echo "Frontend watch: stopped"
+  fi
+  echo ""
+
+  dc ps
+}
+
 cmd_up() {
   check_env
   local build=""
@@ -32,31 +97,18 @@ cmd_up() {
   fi
 
   dc up -d --remove-orphans $build
+  start_watch
 
   echo ""
-  echo "Services started:"
-  echo "  App:    http://localhost:3000"
-  echo "  Health: http://localhost:3000/health"
+  echo "App: http://localhost:3000 (health checks can take a few seconds to pass)"
+  echo "Stop everything with: ./scripts/dev.sh down"
   echo ""
-  echo "Watching frontend for changes... (Ctrl+C to stop everything)"
-
-  cleanup() {
-    echo ""
-    echo "Stopping..."
-    dc down
-    kill $(lsof -ti:3005) 2>/dev/null || true
-  }
-  trap 'cleanup; exit 0' INT TERM
-
-  cd "$ROOT_DIR/frontend" && pnpm watch
+  show_status
 }
 
 cmd_down() {
+  stop_watch
   dc down
-  if lsof -ti:3005 >/dev/null 2>&1; then
-    echo "Stopping esbuild watch server on :3005..."
-    kill $(lsof -ti:3005) 2>/dev/null || true
-  fi
 }
 
 if [[ $# -lt 1 ]]; then
@@ -65,7 +117,15 @@ if [[ $# -lt 1 ]]; then
 fi
 
 case "$1" in
-  up)   cmd_up "${2:-}" ;;
+  up) cmd_up "${2:-}" ;;
   down) cmd_down ;;
-  *)    usage; exit 1 ;;
+  status) show_status ;;
+  logs)
+    shift
+    dc logs -f "$@"
+    ;;
+  *)
+    usage
+    exit 1
+    ;;
 esac

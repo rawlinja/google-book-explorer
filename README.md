@@ -42,7 +42,10 @@ Open [http://localhost:3000](http://localhost:3000). To stop: `./scripts/prod.sh
 
 ```bash
 ./scripts/install.sh   # install dependencies
-./scripts/dev.sh up    # start stack + watch for frontend changes (Ctrl+C stops everything)
+./scripts/dev.sh up      # start stack + frontend watch in the background, then return to the prompt
+./scripts/dev.sh status  # health checks, frontend watch state, containers
+./scripts/dev.sh down    # stop the frontend watch and the stack
+./scripts/dev.sh logs api  # follow container logs (omit the service for all)
 ```
 
 ## Environment variables
@@ -88,11 +91,9 @@ google-book-explorer/
     ├── install.sh
     ├── dev.sh
     ├── prod.sh
-    ├── stop.sh
     ├── build.sh
     ├── test.sh
-    ├── eval.sh
-    └── logs.sh
+    └── eval.sh
 ```
 
 ## License
