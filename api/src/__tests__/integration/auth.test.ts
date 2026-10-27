@@ -3,26 +3,21 @@ import { buildApp } from '../../app.js';
 
 const mockRedis: Record<string, string> = {};
 
-vi.mock('../../plugins/redis.js', async () => {
-  const { default: fp } = await import('fastify-plugin');
-  return {
-    default: fp(async (fastify: any) => {
-      fastify.decorate('redis', {
-        get: (k: string) => Promise.resolve(mockRedis[k] ?? null),
-        setex: (k: string, _ttl: number, v: string) => {
-          mockRedis[k] = v;
-          return Promise.resolve('OK');
-        },
-        del: (k: string) => {
-          delete mockRedis[k];
-          return Promise.resolve(1);
-        },
-        on: () => {},
-        quit: () => Promise.resolve(),
-      });
-    }),
-  };
-});
+vi.mock('../../lib/redis.js', () => ({
+  redis: {
+    get: (k: string) => Promise.resolve(mockRedis[k] ?? null),
+    setex: (k: string, _ttl: number, v: string) => {
+      mockRedis[k] = v;
+      return Promise.resolve('OK');
+    },
+    del: (k: string) => {
+      delete mockRedis[k];
+      return Promise.resolve(1);
+    },
+    on: () => {},
+    quit: () => Promise.resolve(),
+  },
+}));
 
 vi.mock('openid-client', async () => {
   const actual = await vi.importActual<typeof import('openid-client')>('openid-client');

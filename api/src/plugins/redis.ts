@@ -1,7 +1,7 @@
 import fp from 'fastify-plugin';
 import type { FastifyInstance } from 'fastify';
-import { Redis } from 'ioredis';
-import { config } from '../config/index.js';
+import type { Redis } from 'ioredis';
+import { redis } from '../lib/redis.js';
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -10,8 +10,6 @@ declare module 'fastify' {
 }
 
 export default fp(async (fastify: FastifyInstance) => {
-  const redis = new Redis(config.REDIS_URL);
-
   redis.on('error', (err) => fastify.log.error({ err }, 'Redis error'));
 
   fastify.decorate('redis', redis);
