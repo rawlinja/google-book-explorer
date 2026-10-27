@@ -2,12 +2,14 @@ import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from 'vites
 import { buildApp } from '../../app.js';
 
 const mockRedis: Record<string, string> = {};
+const mockTtls: Record<string, number> = {};
 
 vi.mock('../../lib/redis.js', () => ({
   redis: {
     get: (k: string) => Promise.resolve(mockRedis[k] ?? null),
-    setex: (k: string, _ttl: number, v: string) => {
+    setex: (k: string, ttl: number, v: string) => {
       mockRedis[k] = v;
+      mockTtls[k] = ttl;
       return Promise.resolve('OK');
     },
     del: (k: string) => {
@@ -35,6 +37,8 @@ beforeAll(() => app.ready());
 afterAll(() => app.close());
 
 beforeEach(() => {
+  for (const k of Object.keys(mockRedis)) delete mockRedis[k];
+  for (const k of Object.keys(mockTtls)) delete mockTtls[k];
   vi.clearAllMocks();
   oauthClient.generateCodeVerifierAsync.mockResolvedValue({
     codeVerifier: 'test-verifier',
@@ -52,12 +56,15 @@ beforeEach(() => {
   });
 });
 
-async function appWithPendingLogin() {
+async function appWithPendingLogin(
+  configure?: (app: Awaited<ReturnType<typeof buildApp>>) => void
+) {
   const pending = await buildApp();
   pending.addHook('preHandler', async (req) => {
     req.session.codeVerifier = 'test-verifier';
     req.session.state = 'test-state';
   });
+  configure?.(pending);
   await pending.ready();
   return pending;
 }
@@ -67,7 +74,20 @@ function storedTokens() {
   return key ? JSON.parse(mockRedis[key]) : undefined;
 }
 
+function storedTokenTtl() {
+  const key = Object.keys(mockTtls).find((k) => k.startsWith('tokens:'));
+  return key ? mockTtls[key] : undefined;
+}
+
 describe('GET /auth/google', () => {
+  it('asks Google for offline access so a refresh token is issued', async () => {
+    await app.inject({ method: 'GET', url: '/auth/google' });
+
+    expect(oauthClient.generateAuthUrl).toHaveBeenCalledWith(
+      expect.objectContaining({ access_type: 'offline' })
+    );
+  });
+
   it('redirects to the Google URL with an S256 PKCE challenge and state', async () => {
     const res = await app.inject({ method: 'GET', url: '/auth/google' });
 
@@ -118,7 +138,50 @@ describe('GET /auth/google/callback', () => {
     expect(storedTokens()).toMatchObject({
       access_token: 'mock-access-token',
       refresh_token: 'mock-refresh-token',
+      expiry_date: expect.any(Number),
     });
+
+    await pending.close();
+  });
+
+  it('keeps tokens and the session for 7 days when a refresh token is issued', async () => {
+    let expiresAt: number | undefined;
+    const pending = await appWithPendingLogin((app) =>
+      app.addHook('onSend', async (req) => {
+        expiresAt = req.session.expiresAt;
+      })
+    );
+
+    await pending.inject({
+      method: 'GET',
+      url: '/auth/google/callback?code=mock-code&state=test-state',
+    });
+
+    expect(storedTokenTtl()).toBe(604800);
+    expect(expiresAt! - Date.now()).toBeGreaterThan(604790 * 1000);
+
+    await pending.close();
+  });
+
+  it('limits tokens and the session to the access token lifetime without a refresh token', async () => {
+    oauthClient.getToken.mockResolvedValueOnce({
+      tokens: { access_token: 'mock-access-token', expiry_date: Date.now() + 3_599_000 },
+    });
+    let expiresAt: number | undefined;
+    const pending = await appWithPendingLogin((app) =>
+      app.addHook('onSend', async (req) => {
+        expiresAt = req.session.expiresAt;
+      })
+    );
+
+    await pending.inject({
+      method: 'GET',
+      url: '/auth/google/callback?code=mock-code&state=test-state',
+    });
+
+    expect(storedTokenTtl()).toBeGreaterThan(3590);
+    expect(storedTokenTtl()).toBeLessThanOrEqual(3599);
+    expect(expiresAt! - Date.now()).toBeLessThanOrEqual(3_599_000);
 
     await pending.close();
   });

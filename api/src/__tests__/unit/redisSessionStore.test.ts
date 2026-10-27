@@ -46,12 +46,12 @@ describe('RedisSessionStore.set', () => {
       });
     }));
 
-  it('defaults TTL to 3600 when cookie.maxAge is absent', () =>
+  it('defaults TTL to the session lifetime when cookie.maxAge is absent', () =>
     new Promise<void>((done) => {
       const redis = { setex: vi.fn().mockResolvedValue('OK') };
       const session = {};
       new RedisSessionStore(redis as any).set('abc', session, () => {
-        expect(redis.setex).toHaveBeenCalledWith('sess:abc', 3600, JSON.stringify(session));
+        expect(redis.setex).toHaveBeenCalledWith('sess:abc', 604800, JSON.stringify(session));
         done();
       });
     }));

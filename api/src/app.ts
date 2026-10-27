@@ -7,6 +7,7 @@ import rateLimit from '@fastify/rate-limit';
 import { RedisSessionStore } from './store/redisSessionStore.js';
 import { config } from './config/index.js';
 import { redis } from './lib/redis.js';
+import { SESSION_TTL_SECONDS } from './lib/session.js';
 import { loggerOptions } from './lib/logger.js';
 import authRoutes from './routes/auth.js';
 import healthRoutes from './routes/health.js';
@@ -31,7 +32,7 @@ export async function buildApp() {
     cookie: {
       secure: config.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 3600000,
+      maxAge: SESSION_TTL_SECONDS * 1000,
     },
     store: new RedisSessionStore(redis),
   });
