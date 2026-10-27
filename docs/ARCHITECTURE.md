@@ -43,7 +43,7 @@ Routes:
 
 Fastify 5 with TypeScript and pnpm. Configuration is validated with Zod at startup; the process exits if any required environment variable is missing.
 
-Auth uses Google OAuth with PKCE via `openid-client`. Sessions are stored in Redis (no JWT).
+Auth uses Google OAuth with PKCE via `google-auth-library`'s `OAuth2Client`. Sessions are stored in Redis (no JWT).
 
 Routes:
 
