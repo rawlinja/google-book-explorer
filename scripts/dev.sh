@@ -13,6 +13,7 @@ Commands:
   up [--build]  Start containers and the frontend watch in the background; --build rebuilds images first
   down          Stop the frontend watch and containers
   status        Show health checks, frontend watch state, and container status
+  logs [svc]    Follow container logs, optionally for one service (api, nginx, redis)
 EOF
 }
 
@@ -121,6 +122,10 @@ case "$1" in
   up) cmd_up "${2:-}" ;;
   down) cmd_down ;;
   status) show_status ;;
+  logs)
+    shift
+    dc logs -f "$@"
+    ;;
   *)
     usage
     exit 1
