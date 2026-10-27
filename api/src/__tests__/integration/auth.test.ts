@@ -34,6 +34,7 @@ vi.mock('openid-client', async () => {
       access_token: 'mock-access-token',
       refresh_token: 'mock-refresh-token',
       id_token: 'mock-id-token',
+      expires_in: 3599,
     }),
   };
 });
@@ -91,8 +92,9 @@ describe('GET /auth/google/callback', () => {
     const sessionId = Object.keys(mockRedis).find((k) => k.startsWith('tokens:'));
     expect(sessionId).toBeDefined();
     const stored = JSON.parse(mockRedis[sessionId!]);
-    expect(stored.accessToken).toBe('mock-access-token');
-    expect(stored.refreshToken).toBe('mock-refresh-token');
+    expect(stored.access_token).toBe('mock-access-token');
+    expect(stored.refresh_token).toBe('mock-refresh-token');
+    expect(stored.expiry_date).toBeGreaterThan(Date.now());
 
     await authedApp.close();
   });
@@ -113,20 +115,12 @@ describe('GET /auth/google/callback', () => {
 
 describe('POST /auth/logout', () => {
   it('returns ok and calls Redis del to remove the token', async () => {
-    const delSpy = vi.fn().mockResolvedValue(1);
+    const { redis } = await import('../../lib/redis.js');
+    const delSpy = vi.spyOn(redis, 'del');
 
-    const logoutApp = await buildApp();
-    // Override just the del spy on the already-registered redis decorator
-    logoutApp.addHook('onRequest', async (req) => {
-      (req.server as any).redis.del = delSpy;
-    });
-    await logoutApp.ready();
-
-    const res = await logoutApp.inject({ method: 'POST', url: '/auth/logout' });
+    const res = await app.inject({ method: 'POST', url: '/auth/logout' });
     expect(res.statusCode).toBe(200);
     expect(res.json()).toEqual({ ok: true });
     expect(delSpy).toHaveBeenCalledWith(expect.stringMatching(/^tokens:/));
-
-    await logoutApp.close();
   });
 });

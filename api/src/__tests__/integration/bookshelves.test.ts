@@ -11,6 +11,13 @@ vi.mock('../../services/bookshelf.js', () => ({
   removeFromShelf: vi.fn(),
 }));
 
+const { FAKE_LIBRARY } = vi.hoisted(() => ({ FAKE_LIBRARY: { fake: 'library' } }));
+
+vi.mock('../../lib/googleAuth.js', () => ({
+  createUserClient: vi.fn().mockResolvedValue(FAKE_LIBRARY),
+  saveTokens: vi.fn(),
+}));
+
 vi.mock('../../lib/redis.js', () => ({
   redis: {
     get: vi.fn().mockResolvedValue(null),
@@ -54,6 +61,14 @@ describe('GET /api/bookshelves', () => {
     const res = await app.inject({ method: 'GET', url: '/api/bookshelves' });
     expect(res.statusCode).toBe(502);
   });
+
+  it('returns 502 when the user client cannot be built', async () => {
+    const { createUserClient } = await import('../../lib/googleAuth.js');
+    vi.mocked(createUserClient).mockRejectedValueOnce(new Error('No tokens found for session'));
+
+    const res = await app.inject({ method: 'GET', url: '/api/bookshelves' });
+    expect(res.statusCode).toBe(502);
+  });
 });
 
 describe('POST /api/bookshelves/:shelfId/add', () => {
@@ -75,7 +90,7 @@ describe('POST /api/bookshelves/:shelfId/add', () => {
     mock.mockResolvedValueOnce(undefined);
 
     await app.inject({ method: 'POST', url: '/api/bookshelves/4/add?volumeId=xyz789' });
-    expect(mock).toHaveBeenCalledWith(expect.any(String), 4, 'xyz789', expect.anything());
+    expect(mock).toHaveBeenCalledWith(FAKE_LIBRARY, 4, 'xyz789');
   });
 
   it('returns 400 when volumeId is missing', async () => {
@@ -122,7 +137,7 @@ describe('POST /api/bookshelves/:shelfId/remove', () => {
     mock.mockResolvedValueOnce(undefined);
 
     await app.inject({ method: 'POST', url: '/api/bookshelves/4/remove?volumeId=xyz789' });
-    expect(mock).toHaveBeenCalledWith(expect.any(String), 4, 'xyz789', expect.anything());
+    expect(mock).toHaveBeenCalledWith(FAKE_LIBRARY, 4, 'xyz789');
   });
 
   it('returns 400 when volumeId is missing', async () => {
