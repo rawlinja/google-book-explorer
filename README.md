@@ -42,7 +42,9 @@ Open [http://localhost:3000](http://localhost:3000). To stop: `./scripts/prod.sh
 
 ```bash
 ./scripts/install.sh   # install dependencies
-./scripts/dev.sh up    # start stack + watch for frontend changes (Ctrl+C stops everything)
+./scripts/dev.sh up      # start stack + frontend watch in the background, then return to the prompt
+./scripts/dev.sh status  # health checks, frontend watch state, containers
+./scripts/dev.sh down    # stop the frontend watch and the stack (same as ./scripts/stop.sh)
 ```
 
 ## Environment variables
