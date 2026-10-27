@@ -1,58 +1,59 @@
-import type { Redis } from 'ioredis';
-import * as openidClient from 'openid-client';
-import { oidcConfig } from './oidc.js';
-
-const TOKEN_TTL = 3600;
+import type { FastifyBaseLogger } from 'fastify';
+import { books, type books_v1 } from '@googleapis/books';
+import type { Credentials } from 'google-auth-library';
+import { createOAuthClient } from './googleOAuth.js';
+import { redis } from './redis.js';
 
 export interface StoredTokens {
-  accessToken: string;
-  refreshToken: string | null;
-  idToken: string | undefined;
+  access_token: string;
+  refresh_token: string | null;
+  expiry_date: number | null;
 }
 
-export async function getTokens(sessionId: string, redis: Redis): Promise<StoredTokens> {
-  const raw = await redis.get(`tokens:${sessionId}`);
+function tokenKey(sessionId: string): string {
+  return `tokens:${sessionId}`;
+}
+
+export async function getTokens(sessionId: string): Promise<StoredTokens> {
+  const raw = await redis.get(tokenKey(sessionId));
   if (!raw) throw new Error('No tokens found for session');
   return JSON.parse(raw) as StoredTokens;
 }
 
-export async function refreshAndSave(
+export async function saveTokens(
   sessionId: string,
-  stored: StoredTokens,
-  redis: Redis
-): Promise<StoredTokens> {
-  if (!stored.refreshToken) throw new Error('No refresh token available');
-
-  const refreshed = await openidClient.refreshTokenGrant(oidcConfig, stored.refreshToken);
-
-  const updated: StoredTokens = {
-    accessToken: refreshed.access_token,
-    refreshToken: refreshed.refresh_token ?? stored.refreshToken,
-    idToken: refreshed.id_token,
-  };
-
-  await redis.setex(`tokens:${sessionId}`, TOKEN_TTL, JSON.stringify(updated));
-  return updated;
+  tokens: StoredTokens,
+  ttlSeconds: number
+): Promise<void> {
+  await redis.setex(tokenKey(sessionId), ttlSeconds, JSON.stringify(tokens));
 }
 
-export async function authorizedFetch(
-  url: string,
-  init: RequestInit,
+// KEEPTTL: a refresh must not extend the tokens past the session's expiry.
+export async function updateTokens(sessionId: string, tokens: StoredTokens): Promise<void> {
+  await redis.set(tokenKey(sessionId), JSON.stringify(tokens), 'KEEPTTL');
+}
+
+function mergeRefreshed(stored: StoredTokens, refreshed: Credentials): StoredTokens {
+  return {
+    access_token: refreshed.access_token ?? stored.access_token,
+    refresh_token: refreshed.refresh_token ?? stored.refresh_token,
+    expiry_date: refreshed.expiry_date ?? stored.expiry_date,
+  };
+}
+
+export async function createUserClient(
   sessionId: string,
-  redis: Redis
-): Promise<Response> {
-  const tokens = await getTokens(sessionId, redis);
+  log: FastifyBaseLogger
+): Promise<books_v1.Books> {
+  const stored = await getTokens(sessionId);
+  const client = createOAuthClient();
+  client.setCredentials(stored);
 
-  const res = await fetch(url, {
-    ...init,
-    headers: { ...init.headers, Authorization: `Bearer ${tokens.accessToken}` },
+  client.on('tokens', (refreshed) => {
+    updateTokens(sessionId, mergeRefreshed(stored, refreshed)).catch((err) =>
+      log.error({ err }, 'auth.tokens.save_failed')
+    );
   });
 
-  if (res.status !== 401) return res;
-
-  const refreshed = await refreshAndSave(sessionId, tokens, redis);
-  return fetch(url, {
-    ...init,
-    headers: { ...init.headers, Authorization: `Bearer ${refreshed.accessToken}` },
-  });
+  return books({ version: 'v1', auth: client });
 }

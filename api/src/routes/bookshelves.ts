@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { requireAuth } from '../hooks/requireAuth.js';
-import { redis } from '../lib/redis.js';
+import { createUserClient } from '../lib/googleAuth.js';
 import { getBookshelves, addToShelf, removeFromShelf } from '../services/bookshelf.js';
 
 const shelfParamSchema = z.object({
@@ -15,7 +15,8 @@ const addVolumeSchema = z.object({
 export default async function bookshelvesRoutes(fastify: FastifyInstance) {
   fastify.get('/api/bookshelves', { onRequest: requireAuth }, async (req, reply) => {
     try {
-      const shelves = await getBookshelves(req.session.sessionId, redis);
+      const library = await createUserClient(req.session.sessionId, req.log);
+      const shelves = await getBookshelves(library);
       return reply.send({ shelves });
     } catch (err) {
       req.log.error({ err }, 'bookshelf.get.failed');
@@ -35,12 +36,8 @@ export default async function bookshelvesRoutes(fastify: FastifyInstance) {
     }
 
     try {
-      await addToShelf(
-        req.session.sessionId,
-        paramParsed.data.shelfId,
-        queryParsed.data.volumeId,
-        redis
-      );
+      const library = await createUserClient(req.session.sessionId, req.log);
+      await addToShelf(library, paramParsed.data.shelfId, queryParsed.data.volumeId);
       return reply.send({ ok: true });
     } catch (err) {
       req.log.error(
@@ -66,12 +63,8 @@ export default async function bookshelvesRoutes(fastify: FastifyInstance) {
       }
 
       try {
-        await removeFromShelf(
-          req.session.sessionId,
-          paramParsed.data.shelfId,
-          queryParsed.data.volumeId,
-          redis
-        );
+        const library = await createUserClient(req.session.sessionId, req.log);
+        await removeFromShelf(library, paramParsed.data.shelfId, queryParsed.data.volumeId);
         return reply.send({ ok: true });
       } catch (err) {
         req.log.error(

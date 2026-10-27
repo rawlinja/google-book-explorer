@@ -20,6 +20,7 @@
 import type { FastifyInstance } from 'fastify';
 import * as openidClient from 'openid-client';
 import { config } from '../config/index.js';
+import { saveTokens } from '../lib/googleAuth.js';
 import { oidcConfig } from '../lib/oidc.js';
 import { redis } from '../lib/redis.js';
 
@@ -75,14 +76,14 @@ export default async function authRoutes(fastify: FastifyInstance) {
       delete req.session.codeVerifier;
       delete req.session.state;
 
-      await redis.setex(
-        `tokens:${req.session.sessionId}`,
-        TOKEN_TTL,
-        JSON.stringify({
-          accessToken: tokens.access_token,
-          refreshToken: tokens.refresh_token ?? null,
-          idToken: tokens.id_token,
-        })
+      await saveTokens(
+        req.session.sessionId,
+        {
+          access_token: tokens.access_token,
+          refresh_token: tokens.refresh_token ?? null,
+          expiry_date: tokens.expires_in ? Date.now() + tokens.expires_in * 1000 : null,
+        },
+        TOKEN_TTL
       );
       req.log.info('auth.callback.tokens_stored');
 

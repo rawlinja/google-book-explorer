@@ -34,6 +34,7 @@ vi.mock('openid-client', async () => {
       access_token: 'mock-access-token',
       refresh_token: 'mock-refresh-token',
       id_token: 'mock-id-token',
+      expires_in: 3599,
     }),
   };
 });
@@ -91,8 +92,9 @@ describe('GET /auth/google/callback', () => {
     const sessionId = Object.keys(mockRedis).find((k) => k.startsWith('tokens:'));
     expect(sessionId).toBeDefined();
     const stored = JSON.parse(mockRedis[sessionId!]);
-    expect(stored.accessToken).toBe('mock-access-token');
-    expect(stored.refreshToken).toBe('mock-refresh-token');
+    expect(stored.access_token).toBe('mock-access-token');
+    expect(stored.refresh_token).toBe('mock-refresh-token');
+    expect(stored.expiry_date).toBeGreaterThan(Date.now());
 
     await authedApp.close();
   });
