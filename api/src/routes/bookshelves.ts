@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { requireAuth } from '../hooks/requireAuth.js';
+import { redis } from '../lib/redis.js';
 import { getBookshelves, addToShelf, removeFromShelf } from '../services/bookshelf.js';
 
 const shelfParamSchema = z.object({
@@ -14,7 +15,7 @@ const addVolumeSchema = z.object({
 export default async function bookshelvesRoutes(fastify: FastifyInstance) {
   fastify.get('/api/bookshelves', { onRequest: requireAuth }, async (req, reply) => {
     try {
-      const shelves = await getBookshelves(req.session.sessionId, fastify.redis);
+      const shelves = await getBookshelves(req.session.sessionId, redis);
       return reply.send({ shelves });
     } catch (err) {
       req.log.error({ err }, 'bookshelf.get.failed');
@@ -38,7 +39,7 @@ export default async function bookshelvesRoutes(fastify: FastifyInstance) {
         req.session.sessionId,
         paramParsed.data.shelfId,
         queryParsed.data.volumeId,
-        fastify.redis
+        redis
       );
       return reply.send({ ok: true });
     } catch (err) {
@@ -69,7 +70,7 @@ export default async function bookshelvesRoutes(fastify: FastifyInstance) {
           req.session.sessionId,
           paramParsed.data.shelfId,
           queryParsed.data.volumeId,
-          fastify.redis
+          redis
         );
         return reply.send({ ok: true });
       } catch (err) {

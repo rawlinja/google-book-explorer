@@ -4,9 +4,9 @@ import cookie from '@fastify/cookie';
 import session from '@fastify/session';
 import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
-import redisPlugin from './plugins/redis.js';
 import { RedisSessionStore } from './store/redisSessionStore.js';
 import { config } from './config/index.js';
+import { redis } from './lib/redis.js';
 import { loggerOptions } from './lib/logger.js';
 import authRoutes from './routes/auth.js';
 import healthRoutes from './routes/health.js';
@@ -20,10 +20,12 @@ export async function buildApp() {
     trustProxy: 'loopback, linklocal, uniquelocal',
   });
 
+  redis.on('error', (err) => fastify.log.error({ err }, 'Redis error'));
+  fastify.addHook('onClose', async () => redis.quit());
+
   await fastify.register(helmet);
   await fastify.register(cors, { origin: config.CORS_ORIGIN, credentials: true });
   await fastify.register(cookie);
-  await fastify.register(redisPlugin);
   await fastify.register(session, {
     secret: config.SESSION_SECRET,
     cookie: {
@@ -31,7 +33,7 @@ export async function buildApp() {
       sameSite: 'lax',
       maxAge: 3600000,
     },
-    store: new RedisSessionStore(fastify.redis),
+    store: new RedisSessionStore(redis),
   });
   await fastify.register(rateLimit, { max: 100, timeWindow: '1 minute' });
 

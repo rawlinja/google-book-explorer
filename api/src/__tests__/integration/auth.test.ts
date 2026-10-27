@@ -113,20 +113,12 @@ describe('GET /auth/google/callback', () => {
 
 describe('POST /auth/logout', () => {
   it('returns ok and calls Redis del to remove the token', async () => {
-    const delSpy = vi.fn().mockResolvedValue(1);
+    const { redis } = await import('../../lib/redis.js');
+    const delSpy = vi.spyOn(redis, 'del');
 
-    const logoutApp = await buildApp();
-    // Override just the del spy on the already-registered redis decorator
-    logoutApp.addHook('onRequest', async (req) => {
-      (req.server as any).redis.del = delSpy;
-    });
-    await logoutApp.ready();
-
-    const res = await logoutApp.inject({ method: 'POST', url: '/auth/logout' });
+    const res = await app.inject({ method: 'POST', url: '/auth/logout' });
     expect(res.statusCode).toBe(200);
     expect(res.json()).toEqual({ ok: true });
     expect(delSpy).toHaveBeenCalledWith(expect.stringMatching(/^tokens:/));
-
-    await logoutApp.close();
   });
 });
