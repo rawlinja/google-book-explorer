@@ -1,20 +1,15 @@
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import { buildApp } from '../../app.js';
 
-vi.mock('../../plugins/redis.js', async () => {
-  const { default: fp } = await import('fastify-plugin');
-  return {
-    default: fp(async (fastify: any) => {
-      fastify.decorate('redis', {
-        get: vi.fn().mockResolvedValue(null),
-        setex: vi.fn().mockResolvedValue('OK'),
-        del: vi.fn().mockResolvedValue(1),
-        on: () => {},
-        quit: vi.fn().mockResolvedValue(undefined),
-      });
-    }),
-  };
-});
+vi.mock('../../lib/redis.js', () => ({
+  redis: {
+    get: vi.fn().mockResolvedValue(null),
+    setex: vi.fn().mockResolvedValue('OK'),
+    del: vi.fn().mockResolvedValue(1),
+    on: () => {},
+    quit: vi.fn().mockResolvedValue(undefined),
+  },
+}));
 
 vi.mock('openid-client', async () => {
   const actual = await vi.importActual<typeof import('openid-client')>('openid-client');
