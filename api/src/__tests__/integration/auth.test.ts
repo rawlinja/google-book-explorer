@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from 'vitest';
 import { buildApp } from '../../app.js';
 
 const mockRedis: Record<string, string> = {};
@@ -19,96 +19,158 @@ vi.mock('../../lib/redis.js', () => ({
   },
 }));
 
-vi.mock('openid-client', async () => {
-  const actual = await vi.importActual<typeof import('openid-client')>('openid-client');
-  return {
-    ...actual,
-    discovery: vi.fn().mockResolvedValue({}),
-    randomPKCECodeVerifier: vi.fn().mockReturnValue('test-verifier'),
-    calculatePKCECodeChallenge: vi.fn().mockResolvedValue('test-challenge'),
-    randomState: vi.fn().mockReturnValue('test-state'),
-    buildAuthorizationUrl: vi
-      .fn()
-      .mockReturnValue(new URL('https://accounts.google.com/o/oauth2/auth?mock=1')),
-    authorizationCodeGrant: vi.fn().mockResolvedValue({
-      access_token: 'mock-access-token',
-      refresh_token: 'mock-refresh-token',
-      id_token: 'mock-id-token',
-      expires_in: 3599,
-    }),
-  };
-});
+const { oauthClient } = vi.hoisted(() => ({
+  oauthClient: {
+    generateCodeVerifierAsync: vi.fn(),
+    generateAuthUrl: vi.fn(),
+    getToken: vi.fn(),
+  },
+}));
+
+vi.mock('../../lib/googleOAuth.js', () => ({ createOAuthClient: () => oauthClient }));
 
 const app = await buildApp();
 
 beforeAll(() => app.ready());
 afterAll(() => app.close());
 
+beforeEach(() => {
+  vi.clearAllMocks();
+  oauthClient.generateCodeVerifierAsync.mockResolvedValue({
+    codeVerifier: 'test-verifier',
+    codeChallenge: 'test-challenge',
+  });
+  oauthClient.generateAuthUrl.mockReturnValue(
+    'https://accounts.google.com/o/oauth2/v2/auth?mock=1'
+  );
+  oauthClient.getToken.mockResolvedValue({
+    tokens: {
+      access_token: 'mock-access-token',
+      refresh_token: 'mock-refresh-token',
+      expiry_date: Date.now() + 3_599_000,
+    },
+  });
+});
+
+async function appWithPendingLogin() {
+  const pending = await buildApp();
+  pending.addHook('preHandler', async (req) => {
+    req.session.codeVerifier = 'test-verifier';
+    req.session.state = 'test-state';
+  });
+  await pending.ready();
+  return pending;
+}
+
+function storedTokens() {
+  const key = Object.keys(mockRedis).find((k) => k.startsWith('tokens:'));
+  return key ? JSON.parse(mockRedis[key]) : undefined;
+}
+
 describe('GET /auth/google', () => {
-  it('redirects to Google OAuth', async () => {
+  it('redirects to the Google URL with an S256 PKCE challenge and state', async () => {
     const res = await app.inject({ method: 'GET', url: '/auth/google' });
+
     expect(res.statusCode).toBe(302);
     expect(res.headers.location).toContain('accounts.google.com');
+    expect(oauthClient.generateAuthUrl).toHaveBeenCalledWith(
+      expect.objectContaining({
+        code_challenge: 'test-challenge',
+        code_challenge_method: 'S256',
+        state: expect.any(String),
+      })
+    );
   });
 
-  it('stores codeVerifier and state in the session', async () => {
-    let capturedSession: Record<string, unknown> = {};
-
+  it('stores the verifier and the state sent to Google in the session', async () => {
+    let captured: Record<string, unknown> = {};
     const pkceApp = await buildApp();
     pkceApp.addHook('onSend', async (req) => {
-      capturedSession = {
-        codeVerifier: req.session.codeVerifier,
-        state: req.session.state,
-      };
+      captured = { codeVerifier: req.session.codeVerifier, state: req.session.state };
     });
     await pkceApp.ready();
 
     await pkceApp.inject({ method: 'GET', url: '/auth/google' });
 
-    expect(capturedSession.codeVerifier).toBe('test-verifier');
-    expect(capturedSession.state).toBe('test-state');
+    const sentState = oauthClient.generateAuthUrl.mock.calls[0][0].state;
+    expect(sentState).toMatch(/^[\w-]{43}$/);
+    expect(captured).toEqual({ codeVerifier: 'test-verifier', state: sentState });
 
     await pkceApp.close();
   });
 });
 
 describe('GET /auth/google/callback', () => {
-  it('redirects to /auth-signed-in and stores tokens in Redis on success', async () => {
-    const authedApp = await buildApp();
-    authedApp.addHook('preHandler', async (req) => {
-      req.session.codeVerifier = 'test-verifier';
-      req.session.state = 'test-state';
-    });
-    await authedApp.ready();
+  it('exchanges the code, stores the tokens and redirects to /auth-signed-in', async () => {
+    const pending = await appWithPendingLogin();
 
-    const res = await authedApp.inject({
+    const res = await pending.inject({
       method: 'GET',
       url: '/auth/google/callback?code=mock-code&state=test-state',
     });
 
     expect(res.statusCode).toBe(302);
     expect(res.headers.location).toBe('/auth-signed-in');
-
-    const sessionId = Object.keys(mockRedis).find((k) => k.startsWith('tokens:'));
-    expect(sessionId).toBeDefined();
-    const stored = JSON.parse(mockRedis[sessionId!]);
-    expect(stored.access_token).toBe('mock-access-token');
-    expect(stored.refresh_token).toBe('mock-refresh-token');
-    expect(stored.expiry_date).toBeGreaterThan(Date.now());
-
-    await authedApp.close();
-  });
-
-  it('redirects to /authorize when the callback fails', async () => {
-    const { authorizationCodeGrant } = await import('openid-client');
-    vi.mocked(authorizationCodeGrant).mockRejectedValueOnce(new Error('invalid_grant'));
-
-    const res = await app.inject({
-      method: 'GET',
-      url: '/auth/google/callback?code=bad-code&state=wrong-state',
+    expect(oauthClient.getToken).toHaveBeenCalledWith({
+      code: 'mock-code',
+      codeVerifier: 'test-verifier',
+    });
+    expect(storedTokens()).toMatchObject({
+      access_token: 'mock-access-token',
+      refresh_token: 'mock-refresh-token',
     });
 
-    expect(res.statusCode).toBe(302);
+    await pending.close();
+  });
+
+  it('redirects to /authorize without exchanging when state does not match', async () => {
+    const pending = await appWithPendingLogin();
+
+    const res = await pending.inject({
+      method: 'GET',
+      url: '/auth/google/callback?code=mock-code&state=forged-state',
+    });
+
+    expect(res.headers.location).toBe('/authorize');
+    expect(oauthClient.getToken).not.toHaveBeenCalled();
+
+    await pending.close();
+  });
+
+  it('redirects to /authorize when Google sends no code', async () => {
+    const pending = await appWithPendingLogin();
+
+    const res = await pending.inject({
+      method: 'GET',
+      url: '/auth/google/callback?error=access_denied&state=test-state',
+    });
+
+    expect(res.headers.location).toBe('/authorize');
+    expect(oauthClient.getToken).not.toHaveBeenCalled();
+
+    await pending.close();
+  });
+
+  it('redirects to /authorize when the code exchange fails', async () => {
+    oauthClient.getToken.mockRejectedValueOnce(new Error('invalid_grant'));
+    const pending = await appWithPendingLogin();
+
+    const res = await pending.inject({
+      method: 'GET',
+      url: '/auth/google/callback?code=bad-code&state=test-state',
+    });
+
+    expect(res.headers.location).toBe('/authorize');
+
+    await pending.close();
+  });
+
+  it('redirects to /authorize when the session has no pending login', async () => {
+    const res = await app.inject({
+      method: 'GET',
+      url: '/auth/google/callback?code=mock-code&state=test-state',
+    });
+
     expect(res.headers.location).toBe('/authorize');
   });
 });

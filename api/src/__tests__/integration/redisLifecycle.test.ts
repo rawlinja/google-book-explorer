@@ -13,11 +13,6 @@ const { fakeRedis } = vi.hoisted(() => ({
 
 vi.mock('../../lib/redis.js', () => ({ redis: fakeRedis }));
 
-vi.mock('openid-client', async () => {
-  const actual = await vi.importActual<typeof import('openid-client')>('openid-client');
-  return { ...actual, discovery: vi.fn().mockResolvedValue({}) };
-});
-
 describe('Redis lifecycle', () => {
   it('logs Redis errors through the app logger', async () => {
     const app = await buildApp();

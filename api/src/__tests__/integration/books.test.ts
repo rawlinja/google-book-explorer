@@ -19,11 +19,6 @@ vi.mock('../../lib/redis.js', () => ({
   },
 }));
 
-vi.mock('openid-client', async () => {
-  const actual = await vi.importActual<typeof import('openid-client')>('openid-client');
-  return { ...actual, discovery: vi.fn().mockResolvedValue({}) };
-});
-
 const MOCK_BOOKS = {
   items: [{ id: 'abc123', title: 'Clean Code', authors: ['Robert C. Martin'], categories: [] }],
   totalItems: 87,
