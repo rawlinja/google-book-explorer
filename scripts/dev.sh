@@ -2,9 +2,8 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-WATCH_PID_FILE="/tmp/google-book-explorer-watch.pid"
-WATCH_LOG_FILE="/tmp/google-book-explorer-watch.log"
 WATCH_PORT=3005
+WATCH_LOG_FILE="$ROOT_DIR/scripts/logs/frontend-watch.log"
 
 usage() {
   cat <<'EOF'
@@ -29,10 +28,9 @@ dc() {
 }
 
 watch_pid() {
-  [[ -f "$WATCH_PID_FILE" ]] || return 1
   local pid
-  pid=$(cat "$WATCH_PID_FILE")
-  kill -0 "$pid" 2>/dev/null || return 1
+  pid=$(lsof -ti:"$WATCH_PORT" -sTCP:LISTEN 2>/dev/null | head -1) || true
+  [[ -n "$pid" ]] || return 1
   echo "$pid"
 }
 
@@ -44,26 +42,25 @@ start_watch() {
   fi
 
   # Job control gives the watch its own process group, so down can stop pnpm and its node child together.
+  mkdir -p "$(dirname "$WATCH_LOG_FILE")"
   set -m
   (cd "$ROOT_DIR/frontend" && exec pnpm watch) >"$WATCH_LOG_FILE" 2>&1 &
-  echo $! >"$WATCH_PID_FILE"
   set +m
-  echo "Frontend watch started (PID $(cat "$WATCH_PID_FILE"), log: $WATCH_LOG_FILE)"
+  echo "Frontend watch started (PID $!, log: scripts/logs/frontend-watch.log)"
 }
 
 stop_watch() {
-  local pid
-  if pid=$(watch_pid); then
-    kill -- "-$pid" 2>/dev/null || kill "$pid" 2>/dev/null || true
-    echo "Frontend watch stopped (PID $pid)"
-  fi
-  rm -f "$WATCH_PID_FILE"
+  local pid pgid
+  pid=$(watch_pid) || return 0
+  pgid=$(ps -o pgid= -p "$pid" | tr -d ' ')
 
-  # Catches a watch left running by the old foreground script.
-  if lsof -ti:"$WATCH_PORT" >/dev/null 2>&1; then
-    echo "Stopping leftover process on :$WATCH_PORT..."
-    kill $(lsof -ti:"$WATCH_PORT") 2>/dev/null || true
+  # Never signal our own group: a watch started from this shell would take dev.sh down with it.
+  if [[ -n "$pgid" && "$pgid" != "$(ps -o pgid= -p $$ | tr -d ' ')" ]]; then
+    kill -- "-$pgid" 2>/dev/null || true
+  else
+    kill "$pid" 2>/dev/null || true
   fi
+  echo "Frontend watch stopped (PID $pid)"
 }
 
 health_check() {
@@ -84,7 +81,7 @@ show_status() {
 
   local pid
   if pid=$(watch_pid); then
-    echo "Frontend watch: running (PID $pid, log: $WATCH_LOG_FILE)"
+    echo "Frontend watch: running (PID $pid, log: scripts/logs/frontend-watch.log)"
   else
     echo "Frontend watch: stopped"
   fi

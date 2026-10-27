@@ -44,6 +44,7 @@ Open [http://localhost:3000](http://localhost:3000). To stop: `./scripts/prod.sh
 ./scripts/install.sh   # install dependencies
 ./scripts/dev.sh up      # start stack + frontend watch in the background, then return to the prompt
 ./scripts/dev.sh status  # health checks, frontend watch state, containers
+tail -f scripts/logs/frontend-watch.log  # frontend watch output (build errors)
 ./scripts/dev.sh down    # stop the frontend watch and the stack (same as ./scripts/stop.sh)
 ```
 
