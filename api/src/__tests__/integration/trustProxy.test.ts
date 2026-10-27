@@ -20,11 +20,6 @@ vi.mock('../../lib/redis.js', () => {
   };
 });
 
-vi.mock('openid-client', async () => {
-  const actual = await vi.importActual<typeof import('openid-client')>('openid-client');
-  return { ...actual, discovery: vi.fn().mockResolvedValue({}) };
-});
-
 const app = await buildApp();
 app.get('/__test/ip', async (req) => ({ ip: req.ip }));
 

@@ -28,11 +28,6 @@ vi.mock('../../lib/redis.js', () => ({
   },
 }));
 
-vi.mock('openid-client', async () => {
-  const actual = await vi.importActual<typeof import('openid-client')>('openid-client');
-  return { ...actual, discovery: vi.fn().mockResolvedValue({}) };
-});
-
 const MOCK_SHELVES = [
   { id: 2, title: 'To Read', volumeCount: 5 },
   { id: 3, title: 'Reading Now', volumeCount: 2 },
